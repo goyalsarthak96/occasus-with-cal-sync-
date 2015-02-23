@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Occasus</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="new_event_button">Add New Event</string>
+    <string name="existing_events">Events</string>
+    <string name="title_activity_set__toggles">Set_Toggles</string>
+    <string name="set_toggles">Set Toggles</string>
+    <string name="sound_toggles">Sound Toggles</string>
+    <string name="system_toggles">System Toggles</string>
+    <string name="urgent_sms">Urgent SMS</string>
+    <string name="contacts_exception">Contacts Exception</string>
+    <string name="title_activity_sound_toggles">SoundToggles</string>
+    <string name="notification">Notification</string>
+    <string name="alarm">Alarm</string>
+    <string name="title_activity_system_toggles">SystemToggles</string>
+    <string name="shut_down">Shut Down</string>
+    <string name="wifi">Wifi</string>
+    <string name="bluetooth">Bluetooth</string>
+    <string name="mobile_data">Mobile Data</string>
+    <string name="silent">Silent</string>
+    <string name="title_activity_bluetooth_settings">BluetoothSettings</string>
+    <string name="bluetooth_on_radiobutton">On</string>
+    <string name="bluetooth_off_radiobutton">Off</string>
+    <string name="title_activity_silent_settings">SilentSettings</string>
+    <string name="title_activity_shut_down">ShutDown</string>
+    <string name="shutdown_yes_radiobutton">Yes</string>
+    <string name="shutdown_no_radiobutton">No</string>
+    <string name="title_activity_wifi_settings">WifiSettings</string>
+    <string name="wifi_turnon_radiobutton">Turn On</string>
+    <string name="wifi_turnoff_radiobutton">Turn Off</string>
+    <string name="silent_on_radiobutton">silent</string>
+    <string name="ring_on_radiobutton">ring</string>
+    <string name="vibrate_on_radiobutton">vibrate</string>
+    <string name="title_activity_mobile_data_settings">MobileDataSettings</string>
+    <string name="mobiledata_on_radiobutton">Turn On</string>
+    <string name="mobiledata_off_radiobutton">Turn Off</string>
+    <string name="title_activity_create_event">CreateEvent</string>
+    <string name="title_activity_contacts_exception">ContactsException</string>
+    <string name="exception_text">Contacts Exception</string>
+    <string name="contacts_list">Contacts List</string>
+    <string name="title_activity_send_sms">SendSms</string>
+    <string name="title_activity_send_message">sendMessage</string>
+    <string name="title_activity_notifications">notifications</string>
+
+</resources>
