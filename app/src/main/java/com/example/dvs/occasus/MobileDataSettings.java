@@ -21,7 +21,7 @@ public class MobileDataSettings extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
-        //comment added to check push
+    
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mobile_data_settings);
         Intent intent = getIntent();
