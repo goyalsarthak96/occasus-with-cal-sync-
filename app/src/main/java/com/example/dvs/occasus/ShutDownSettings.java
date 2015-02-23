@@ -7,7 +7,7 @@ import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-
+//comment to check push
 
 public class ShutDownSettings extends ActionBarActivity {
 
@@ -20,7 +20,6 @@ public class ShutDownSettings extends ActionBarActivity {
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "My Tag");
         wl.acquire();
-    //new commetn
         wl.release();
     }
 
