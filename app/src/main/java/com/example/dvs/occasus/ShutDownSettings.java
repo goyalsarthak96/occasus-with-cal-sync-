@@ -20,7 +20,7 @@ public class ShutDownSettings extends ActionBarActivity {
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "My Tag");
         wl.acquire();
-
+    //new commetn
         wl.release();
     }
 
