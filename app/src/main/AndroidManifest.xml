@@ -15,6 +15,7 @@
 
     <application
         android:allowBackup="true"
+        android:debuggable="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
@@ -35,6 +36,12 @@
             android:name=".SoundToggles"
             android:parentActivityName=".SetToggles" >
         </activity>
+
+        <receiver android:name=".Activate_event" >
+        </receiver>
+        <receiver android:name=".deactivate_event" >
+        </receiver>
+
         <activity
             android:name=".SystemToggles"
             android:parentActivityName=".SetToggles" >
@@ -70,6 +77,14 @@
         <activity
             android:name=".ContactsException"
             android:label="@string/title_activity_contacts_exception" >
+        </activity>
+        <activity
+            android:name=".Edit_event"
+            android:label="@string/title_activity_edit_event" >
+        </activity>
+        <activity
+            android:name=".Show_details"
+            android:label="@string/title_activity_show_details" >
         </activity>
     </application>
 

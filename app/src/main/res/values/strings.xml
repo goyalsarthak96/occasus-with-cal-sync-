@@ -44,5 +44,8 @@
     <string name="title_activity_send_sms">SendSms</string>
     <string name="title_activity_send_message">sendMessage</string>
     <string name="title_activity_notifications">notifications</string>
+    <string name="title_activity_edit_event">Edit_event</string>
+    <string name="title_activity_show_details">Show_details</string>
+    <string name="help">help</string>
 
 </resources>

@@ -31,7 +31,7 @@
     <EditText
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/editText"
+        android:id="@+id/eve_name"
         android:layout_below="@+id/sms_help"
         android:hint="Enter message"
         android:height="100dp"

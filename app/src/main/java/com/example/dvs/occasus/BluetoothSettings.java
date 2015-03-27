@@ -11,7 +11,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.RadioButton;
-//new comment
+
 
 public class BluetoothSettings extends ActionBarActivity {
     //shared preferences declared
