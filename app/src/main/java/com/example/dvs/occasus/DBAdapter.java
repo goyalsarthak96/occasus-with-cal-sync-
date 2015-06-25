@@ -11,33 +11,34 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
+import android.widget.Toast;
 
 
 public class DBAdapter{
 
-    //private static String DB_PATH = "";
 
     public static final String DATABASE_NAME = "Events";
     public static final String DATABASE_TABLE = "event_list";
     public static final int DATABASE_VERSION = 1;
-    public static final String value= "event_name";
+    public static final String value= "_id";
     private DbHelper Helper;
     private static Context Context;
     private static SQLiteDatabase db;
+    Context context;
 
 
     static final String DATABASE_CREATE =
             "create table event_list (_id integer primary key autoincrement, event_name text not null,description text, " +
-                    "event_date text not null, start_time text not null, end_time text not null," +
-                    "bluetooth text not null,wifi text not null,profile text not null, mobile_data text not null,monday integer not null," +
-                    "tuesday integer not null,wednesday integer not null,thursday integer not null,friday not null,saturday not null," +
-                    "sunday not null);";
+                    "event_start_date text not null, event_end_date text not null,start_time text not null, end_time text not null," +
+                    "event_start_date_time text not null,bluetooth text not null,wifi text not null,profile text not null, " +
+                    "mobile_data text not null,repeat text not null,repeat_until text not null," +
+                    "cur_dayofweek_for_cus_monthly_rep text,days_bw_start_n_end integer not null,next_date text not null);";
 
 
-    //bluetooth  wifi  profile  mobile_data
 
     public DBAdapter(Context ctx) {
         Context = ctx;
+        context=ctx;
         Helper = new DbHelper(Context);
     }
 
@@ -45,7 +46,6 @@ public class DBAdapter{
 
         public DbHelper(Context context) {
             super(context, DATABASE_NAME, null, DATABASE_VERSION);
-            // DB_PATH = "/data/data/" + context.getPackageName() + "/databases/";
             // TODO Auto-generated constructor stub
         }
 
@@ -54,7 +54,6 @@ public class DBAdapter{
             try {
                 db.execSQL(DATABASE_CREATE);
             } catch (SQLException e) {
-                //e.printStackTrace();
                 throw e;
             }
         }
@@ -83,66 +82,105 @@ public class DBAdapter{
         Helper.close();
     }
 
-    public long insertevent(String name,String desc, String date, String stime, String etime, String bluetooth2,
-                            String wifi2, String profile,String mobile_data,Integer mon,Integer tue,Integer wed,Integer thu,
-                            Integer fri,Integer sat,Integer sun)
+    public long insertevent(String name,String desc, String start_date, String end_date,String stime, String etime,
+                            String start_date_time, String bluetooth2,String wifi2, String profile,String mobile_data,
+                            String repeat,String repeat_until,String cur_dayofweek_for_cus_monthly_rep,
+                            int days_bw_start_n_end,String next_date)
     {
 
         ContentValues initialValues = new ContentValues();
         initialValues.put("event_name", name);
-
         initialValues.put("description",desc);
-        initialValues.put("event_date", date);
+        initialValues.put("event_start_date", start_date);
+        initialValues.put("event_end_date",end_date);
         initialValues.put("start_time",stime);
         initialValues.put("end_time",etime);
+        initialValues.put("event_start_date_time",start_date_time);
         initialValues.put("bluetooth",bluetooth2);
         initialValues.put("wifi",wifi2);
         initialValues.put("profile",profile);
         initialValues.put("mobile_data",mobile_data);
-        initialValues.put("monday",mon);
-        initialValues.put("tuesday",tue);
-        initialValues.put("wednesday",wed);
-        initialValues.put("thursday",thu);
-        initialValues.put("friday",fri);
-        initialValues.put("saturday",sat);
-        initialValues.put("sunday",sun);
-
-
+        initialValues.put("repeat",repeat);
+        initialValues.put("repeat_until",repeat_until);
+        initialValues.put("cur_dayofweek_for_cus_monthly_rep",cur_dayofweek_for_cus_monthly_rep);
+        initialValues.put("days_bw_start_n_end",days_bw_start_n_end);
+        initialValues.put("next_date",next_date);
 
         return db.insert(DATABASE_TABLE, null, initialValues);
+
     }
 
-    //---deletes a particular event---
-    public void deleteEvent(String name1)
-    {
-        // String where = "value= 'name1'";
-       // String[] whereArgs= null;
-        open();
-        db.delete(DATABASE_TABLE,value + "= ?", new String[]{name1});
-        close();
 
-       // return db.delete(DATABASE_TABLE, "event_name" + "=" + name1, null) > 0;
+
+    //---deletes a particular event---
+    public void deleteEvent(int id)
+    {
+        open();
+        db.delete(DATABASE_TABLE,value + "= ?", new String[]{Integer.toString(id)});
+        close();
     }
 
 
     //---retrieves all the contacts---
     public Cursor getAllEventsDetails()
     {
-
         return db.rawQuery("SELECT * from event_list",null);
     }
+
+/*
+    // retrieves contacts having name=req_name
     public Cursor getEventsDetail(String req_name)
     {
-
         String edit= "select * from event_list where event_name =?";
-
-
         return db.rawQuery(edit,new String[]{req_name});
-
-
-
+    }
+*/
+    //retrieves contacts having _id=id
+    public Cursor getEventDetail(int id)
+    {
+        String edit= "select * from event_list where _id=?";
+        return db.rawQuery(edit,new String[] {Integer.toString(id)});
     }
 
+    public Cursor getEventDetail1(String date_time)
+    {
+        String edit= "select * from event_list where event_start_date_time=?";
+        return db.rawQuery(edit,new String[] {date_time});
+    }
+
+
+    public int update_Database(int id,String name,String desc, String start_date, String end_date,String stime, String etime,
+                                String start_date_time, String bluetooth2,String wifi2, String profile,String mobile_data,
+                                String repeat,String repeat_until,String cur_dayofweek_for_cus_monthly_rep,
+                                int days_bw_start_n_end,String next_date)
+    {
+
+
+        ContentValues updatedValues = new ContentValues();
+        updatedValues.put("event_name", name);
+        updatedValues.put("description",desc);
+        updatedValues.put("event_start_date", start_date);
+        updatedValues.put("event_end_date",end_date);
+        updatedValues.put("start_time",stime);
+        updatedValues.put("end_time",etime);
+        updatedValues.put("event_start_date_time",start_date_time);
+        updatedValues.put("bluetooth",bluetooth2);
+        updatedValues.put("wifi",wifi2);
+        updatedValues.put("profile",profile);
+        updatedValues.put("mobile_data",mobile_data);
+        updatedValues.put("repeat",repeat);
+        updatedValues.put("repeat_until",repeat_until);
+        updatedValues.put("cur_dayofweek_for_cus_monthly_rep",cur_dayofweek_for_cus_monthly_rep);
+        updatedValues.put("days_bw_start_n_end", days_bw_start_n_end);
+        updatedValues.put("next_date", next_date);
+
+
+        return db.update(DATABASE_TABLE,updatedValues,value + "= ?",new String[] {Integer.toString(id) });
+
+        //return db.update(DATABASE_TABLE,updatedValues,value + "="+Integer.toString(id),null);
+
+//
+    }
 
 
 }

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content">
+
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Every"
+        android:id="@+id/weekly_every"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="10dp"
+        android:textSize="15sp" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/weekly_editText"
+        android:layout_toRightOf="@+id/weekly_every"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="10dp"
+        android:width="35dp"
+        android:text="1"
+
+        android:textSize="15sp"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/week"
+        android:layout_toRightOf="@+id/weekly_editText"
+
+        android:layout_marginTop="10dp"
+        android:text="week"
+        android:textSize="15sp"/>
+
+    <ToggleButton
+        android:layout_width="50dp"
+        android:layout_height="35dp"
+        android:text="Mon"
+        android:id="@+id/mon"
+        android:layout_below="@+id/weekly_editText"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="10dp"
+        android:textOn="Mon"
+        android:textOff="Mon"
+        android:textSize="10dp" />
+
+    <ToggleButton
+        android:layout_width="50dp"
+        android:layout_height="35dp"
+        android:text="Tue"
+        android:id="@+id/tue"
+        android:layout_toRightOf="@+id/mon"
+        android:layout_marginTop="10dp"
+        android:layout_below="@+id/weekly_editText"
+
+        android:textOff="Tue"
+        android:textOn="Tue"
+        android:textSize="10dp" />
+
+    <ToggleButton
+        android:layout_width="50dp"
+        android:layout_height="35dp"
+        android:text="Wed"
+        android:id="@+id/wed"
+        android:layout_toRightOf="@+id/tue"
+        android:layout_marginTop="10dp"
+        android:layout_below="@+id/weekly_editText"
+
+        android:textOn="Wed"
+        android:textOff="Wed"
+        android:textSize="10dp" />
+
+    <ToggleButton
+        android:layout_width="50dp"
+        android:layout_height="35dp"
+        android:text="Thu"
+        android:id="@+id/thu"
+        android:layout_toRightOf="@+id/wed"
+        android:layout_marginTop="10dp"
+        android:layout_below="@+id/weekly_editText"
+        android:textOff="Thu"
+        android:textOn="Thu"
+        android:textSize="10dp" />
+    <ToggleButton
+        android:layout_width="50dp"
+        android:layout_height="35dp"
+        android:text="Fri"
+        android:id="@+id/fri"
+        android:layout_marginLeft="35dp"
+        android:layout_below="@+id/mon"
+        android:textOn="Fri"
+        android:textOff="Fri"
+        android:textSize="10dp" />
+    <ToggleButton
+        android:layout_width="50dp"
+        android:layout_height="35dp"
+        android:text="Sat"
+        android:id="@+id/sat"
+        android:layout_below="@+id/mon"
+        android:layout_toRightOf="@+id/fri"
+        android:textOff="Sat"
+        android:textOn="Sat"
+        android:textSize="10dp" />
+    <ToggleButton
+        android:layout_width="50dp"
+        android:layout_height="35dp"
+        android:text="Sun"
+        android:id="@+id/sun"
+        android:layout_below="@+id/mon"
+        android:layout_toRightOf="@+id/sat"
+        android:textOff="Sun"
+        android:textOn="Sun"
+        android:textSize="10dp" />
+
+</RelativeLayout>

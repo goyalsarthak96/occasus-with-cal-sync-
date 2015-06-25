@@ -30,10 +30,7 @@
         android:text="Name :"
         android:id="@+id/name"
         android:layout_below="@+id/eve_details"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_marginLeft="15dp"
-        android:layout_marginStart="32dp"
+
         android:layout_marginTop="38dp"
         android:textSize="18dp" />
 
@@ -45,18 +42,17 @@
         android:id="@+id/name_text"
 
         android:textSize="18dp"
-        android:layout_above="@+id/description"
-        android:layout_centerHorizontal="true"
-        android:gravity="right" />
+        android:layout_below="@+id/eve_details"
+        android:layout_marginTop="38dp"
+        android:layout_toRightOf="@id/name"
+        android:layout_marginLeft="15dp"/>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Description :"
         android:id="@+id/description"
-        android:layout_below="@+id/name"
-        android:layout_alignLeft="@+id/name"
-        android:layout_alignStart="@+id/name"
+        android:layout_below="@+id/name_text"
         android:layout_marginTop="32dp"
         android:textSize="18dp"
         android:textAppearance="?android:attr/textAppearanceLarge" />
@@ -68,24 +64,21 @@
         android:layout_below="@+id/name_text"
         android:id="@+id/description_text"
         android:layout_marginRight="20dp"
-
         android:textSize="18dp"
-
-        android:layout_above="@+id/textView"
         android:layout_marginTop="32dp"
-        android:layout_alignLeft="@+id/name_text"
-        android:layout_alignStart="@+id/name_text" />
+        android:layout_toRightOf="@id/description"
+        android:text="hjg"
+        android:layout_marginLeft="15dp" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="Date :"
-        android:id="@+id/date"
+        android:text="Start Date :"
+        android:id="@+id/start_date"
         android:textSize="18dp"
-        android:layout_below="@+id/description"
-        android:layout_alignLeft="@+id/description"
-        android:layout_alignStart="@+id/description"
+        android:layout_below="@+id/description_text"
+
         android:layout_marginTop="32dp" />
 
     <TextView
@@ -93,15 +86,17 @@
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:text="Large Text"
-        android:id="@+id/date_text"
+        android:id="@+id/start_date_text"
         android:textIsSelectable="false"
         android:textSize="18dp"
         android:layout_below="@+id/description_text"
-        android:layout_alignLeft="@+id/name_text"
         android:layout_marginRight="20dp"
 
         android:layout_marginTop="32dp"
-        android:gravity="right" />
+        android:gravity="right"
+
+        android:layout_toRightOf="@id/start_date"
+        android:layout_marginLeft="15dp" />
 
 
     <TextView
@@ -111,9 +106,8 @@
         android:id="@+id/stime"
         android:textSize="18dp"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:layout_below="@+id/date"
-        android:layout_alignLeft="@+id/date"
-        android:layout_alignStart="@+id/date"
+        android:layout_below="@+id/start_date_text"
+
         android:layout_marginTop="32dp" />
 
     <TextView
@@ -122,13 +116,42 @@
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:text="Large Text"
         android:id="@+id/stime_text"
-        android:layout_below="@+id/date_text"
-        android:layout_alignRight="@+id/date_text"
-        android:layout_alignEnd="@+id/date_text"
+        android:layout_below="@+id/start_date_text"
+        android:layout_marginTop="32dp"
+        android:textSize="18dp"
+        android:layout_toRightOf="@id/stime"
+        android:layout_marginLeft="15dp" />
 
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="End Date :"
+        android:id="@+id/end_date"
+        android:textSize="18dp"
+        android:layout_below="@+id/stime_text"
+
+        android:layout_marginTop="32dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Large Text"
+        android:id="@+id/end_date_text"
+        android:textIsSelectable="false"
+        android:textSize="18dp"
+        android:layout_below="@+id/stime_text"
+        android:layout_marginRight="20dp"
 
         android:layout_marginTop="32dp"
-        android:textSize="18dp" />
+        android:gravity="right"
+
+        android:layout_toRightOf="@id/end_date"
+        android:layout_marginLeft="15dp" />
+
+
 
     <TextView
         android:layout_width="wrap_content"
@@ -137,10 +160,7 @@
         android:text="End Time :"
         android:id="@+id/etime"
         android:textSize="18dp"
-        android:layout_below="@+id/stime"
-        android:layout_alignLeft="@+id/stime"
-
-        android:layout_alignStart="@+id/stime"
+        android:layout_below="@+id/end_date_text"
         android:layout_marginTop="32dp" />
 
     <TextView
@@ -149,13 +169,11 @@
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:text="Large Text"
         android:id="@+id/etime_text"
-        android:layout_below="@+id/stime_text"
-        android:layout_alignRight="@+id/stime_text"
-        android:layout_alignEnd="@+id/stime_text"
-
-
+        android:layout_below="@+id/end_date_text"
         android:layout_marginTop="32dp"
-        android:textSize="18dp" />
+        android:textSize="18dp"
+        android:layout_toRightOf="@id/etime"
+        android:layout_marginLeft="15dp" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -164,9 +182,8 @@
         android:text="Repeat :"
         android:id="@+id/repeat"
         android:textSize="18dp"
-        android:layout_below="@+id/etime"
-        android:layout_alignLeft="@+id/etime"
-        android:layout_alignStart="@+id/etime"
+        android:layout_below="@+id/etime_text"
+
         android:layout_marginTop="32dp" />
     <TextView
         android:layout_width="wrap_content"
@@ -175,12 +192,15 @@
         android:text="Large Text"
         android:id="@+id/repeat_text"
         android:layout_below="@+id/etime_text"
-        android:layout_alignRight="@+id/etime_text"
-        android:layout_alignEnd="@+id/etime_text"
+
         android:layout_marginTop="32dp"
 
 
-        android:textSize="18dp" />
+        android:textSize="18dp"
+
+        android:layout_toRightOf="@id/repeat"
+        android:layout_marginLeft="15dp"
+        android:layout_marginRight="10dp" />
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -188,23 +208,19 @@
         android:text="Bluetooth :"
         android:id="@+id/bluetooth"
         android:textSize="18dp"
-        android:layout_below="@+id/repeat"
-        android:layout_alignLeft="@+id/repeat"
-        android:layout_alignStart="@+id/repeat"
+        android:layout_below="@+id/repeat_text"
+
         android:layout_marginTop="32dp" />
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceLarge"
         android:text="Large Text"
         android:id="@+id/bluetooth_text"
         android:layout_below="@+id/repeat_text"
-        android:layout_alignRight="@+id/repeat_text"
-        android:layout_alignEnd="@+id/repeat_text"
         android:layout_marginTop="32dp"
-
-
-        android:textSize="18dp" />
+        android:textSize="18dp"
+        android:layout_toRightOf="@id/bluetooth"
+        android:layout_marginLeft="15dp" />
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -212,9 +228,9 @@
         android:text="Wifi :"
         android:id="@+id/wifi"
         android:textSize="18dp"
-        android:layout_below="@+id/bluetooth"
-        android:layout_alignLeft="@+id/bluetooth"
-        android:layout_alignStart="@+id/bluetooth"
+        android:layout_below="@+id/bluetooth_text"
+
+
         android:layout_marginTop="32dp" />
     <TextView
         android:layout_width="wrap_content"
@@ -223,12 +239,14 @@
         android:text="Large Text"
         android:id="@+id/wifi_text"
         android:layout_below="@+id/bluetooth_text"
-        android:layout_alignRight="@+id/bluetooth_text"
-        android:layout_alignEnd="@+id/bluetooth_text"
+
         android:layout_marginTop="32dp"
 
 
-        android:textSize="18dp" />
+        android:textSize="18dp"
+
+        android:layout_toRightOf="@id/wifi"
+        android:layout_marginLeft="15dp" />
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -236,9 +254,8 @@
         android:text="Mobile Data :"
         android:id="@+id/mobile_data"
         android:textSize="18dp"
-        android:layout_below="@+id/wifi"
-        android:layout_alignLeft="@+id/wifi"
-        android:layout_alignStart="@+id/wifi"
+        android:layout_below="@+id/wifi_text"
+
         android:layout_marginTop="32dp" />
     <TextView
         android:layout_width="wrap_content"
@@ -247,12 +264,10 @@
         android:text="Large Text"
         android:id="@+id/mobile_data_text"
         android:layout_below="@+id/wifi_text"
-        android:layout_alignRight="@+id/wifi_text"
-        android:layout_alignEnd="@+id/wifi_text"
         android:layout_marginTop="32dp"
-
-
-        android:textSize="18dp" />
+        android:textSize="18dp"
+        android:layout_toRightOf="@id/mobile_data"
+        android:layout_marginLeft="15dp" />
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -260,9 +275,8 @@
         android:text="Profile :"
         android:id="@+id/profile"
         android:textSize="18dp"
-        android:layout_below="@+id/mobile_data"
-        android:layout_alignLeft="@+id/mobile_data"
-        android:layout_alignStart="@+id/mobile_data"
+        android:layout_below="@+id/mobile_data_text"
+
         android:layout_marginTop="32dp" />
     <TextView
         android:layout_width="wrap_content"
@@ -271,12 +285,13 @@
         android:text="Large Text"
         android:id="@+id/profile_text"
         android:layout_below="@+id/mobile_data_text"
-        android:layout_alignRight="@+id/mobile_data_text"
-        android:layout_alignEnd="@+id/mobile_data_text"
+
         android:layout_marginTop="32dp"
+        android:textSize="18dp"
+        android:layout_toRightOf="@id/profile"
+        android:layout_marginLeft="15dp" />
 
 
-        android:textSize="18dp" />
 
 </RelativeLayout>
 </ScrollView>

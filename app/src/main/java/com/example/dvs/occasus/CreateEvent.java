@@ -3,274 +3,556 @@ package com.example.dvs.occasus;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
-
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.database.Cursor;
-
+import android.os.Handler;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.content.Intent;
 import android.view.View;
+import android.app.Dialog;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.DatePicker;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.TimePicker;
+import android.widget.Toast;
 
-
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-
-import android.app.Dialog;
-
-
-import android.widget.Button;
-import android.widget.CompoundButton;
-import android.widget.DatePicker;
-import android.widget.EditText;
-
-import android.widget.Switch;
-import android.widget.TextView;
-import android.widget.TimePicker;
-
-import android.widget.Toast;
-
 
 
 
 public class CreateEvent extends ActionBarActivity {
 
     int shour, sminute,ehour,eminute;
-    int yr, month, day;
-    static final int DATE_DIALOG_ID = 1;
-    static final int TIME_DIALOG_ID = 0;
-    String event_name;
-    String desc;
-    EditText eve_name1;
-    EditText descrip1;
-    String start_strtime;
-    String end_strtime;
-    String eve_date;
-
-    Switch s;
+    int start_yr, start_month, start_day,end_yr,end_month,end_day;
+    int start_time_set=0;
+    int end_time_set=0;
+    int start_date_set=0;
+    int end_date_set=0;
     int flag;
+    int id_to_be_edited;
+    CharSequence [] repeat_options1={"   Does not Repeat","   Every Day","   Every Week","   Every Month","   Every Year","   Custom..."};
 
-    String req_name;
 
 
-    Button b;
-    CharSequence[] items = { "Monday", "Tuesday", "Wednesday","Thursday","Friday","Saturday","Sunday" };
-    boolean[] itemsChecked = new boolean [items.length];
-    boolean[] previous_itemsChecked = new boolean [items.length];
+
+    String event_name;
+    String desc="";
+    String start_strtime="00:00";
+    String end_strtime="24:00";
+    String eve_start_date="yo";
+    String eve_end_date="yo";
+    String final_repeat="";
+    String repeat_until="";
+    String bluetooth="no",wifi1="no",mobile_data="no";
+    String profile_status;
+    String cur_dayofweek_for_cus_monthly_rep="";
+
+
+
+
+    EditText editText_name;
+    EditText editText_desc;
+    EditText editText_start_date;
+    EditText editText_end_date;
+    EditText editText_stime;
+    EditText editText_etime;
+    EditText editText_repeat;
+
+
+
+
+    public static final String custom_info = "custom_repeat";
+    SharedPreferences.Editor custom_editor;
+    SharedPreferences custom_sharedpreferences;
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_event);
-        Intent intent = getIntent();
-        flag=intent.getIntExtra("flag",1);
-        Calendar today = Calendar.getInstance();
-        yr = today.get(Calendar.YEAR);
-        month = today.get(Calendar.MONTH);
-        day = today.get(Calendar.DAY_OF_MONTH);
-        eve_name1   = (EditText)findViewById(R.id.eve_name);
-        descrip1 = (EditText)findViewById(R.id.descrip);
-        s=(Switch)findViewById(R.id.switch2);
-        TextView textView =(TextView)findViewById(R.id.textView2);
+
+        //to add logo to action bar
+        ActionBar ac=getSupportActionBar();
+        ac.setDisplayShowHomeEnabled(true);
+        ac.setLogo(R.drawable.occasus1);
+        ac.setDisplayUseLogoEnabled(true);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(false);//to hide back button on action bar
 
 
 
-        //to initialize item_checked array.......item_checked used for storing checked values in repeatition dailog box days
-        if(flag==0) {
-            for (int i = 0; i < 7; i++) {
-                itemsChecked[i] = false;
-                previous_itemsChecked[i] = false;
+        Calendar today = Calendar.getInstance();//today contains current date and time when event is being created
+        start_yr = today.get(Calendar.YEAR);  //yr initialized
+        end_yr = today.get(Calendar.YEAR);
+        start_month = today.get(Calendar.MONTH);  //month initialized
+        end_month = today.get(Calendar.MONTH);
+        start_day = today.get(Calendar.DAY_OF_MONTH);  //date initialized
+        end_day = today.get(Calendar.DAY_OF_MONTH);
+
+
+
+        editText_name = (EditText) findViewById(R.id.eve_name);
+        editText_desc = (EditText) findViewById(R.id.descrip);
+        editText_start_date = (EditText) findViewById(R.id.start_date);
+        editText_end_date = (EditText) findViewById(R.id.end_date);
+        editText_stime = (EditText) findViewById(R.id.stime);
+        editText_etime = (EditText) findViewById(R.id.etime);
+        editText_repeat = (EditText) findViewById(R.id.repeat);
+
+
+
+        custom_sharedpreferences = getBaseContext().getSharedPreferences(custom_info, Context.MODE_PRIVATE);
+        custom_editor = custom_sharedpreferences.edit();
+
+        int coming_from_custom_repeat=custom_sharedpreferences.getInt("coming_from_custom_repeat",0);
+        if(coming_from_custom_repeat==0) {
+
+
+
+            Intent intent = getIntent();
+            flag = intent.getIntExtra("flag", 0);//flag passed from main activity class to create event class
+            // flag=0 if new event is being created
+            //flag=1 if event is being edited
+
+
+
+
+
+
+            if (flag == 0)//if new event is being created
+            {
+                start_time_set = 0;
+                end_time_set = 0;//end_time_set=0 => user hasn't entered any time....used in checking if  etime>stime
+                start_date_set = 0;
+                end_date_set = 0;
+                repeat_until="0";
+                final_repeat="0";
+                cur_dayofweek_for_cus_monthly_rep="";
+                editText_repeat.setText("Does not Repeat");
+            }
+
+
+            if (flag == 1)//if event is being edited
+            {
+                TextView textView = (TextView) findViewById(R.id.textView2);// textview -> reference object to title
+                textView.setText("Edit Event");//title set to "edit event"
+
+                start_time_set = 1;
+                end_time_set = 1;//user entered some end time(when event was created)
+                start_date_set = 1;
+                end_date_set = 1;
+
+                id_to_be_edited = intent.getIntExtra("clicked_id",0);
+                //clicked_id is id of the profile to be edited
+                //clicked_id is sent to createvent from mainactivity if user wants to edit the event
+
+
+                DBAdapter db1 = new DBAdapter(CreateEvent.this);
+                db1.open();//database open containing event details
+                Cursor c;//to get details of all events with id=edit_id
+                c = db1.getEventDetail(id_to_be_edited);
+                c.moveToFirst();
+                event_name = c.getString(c.getColumnIndex("event_name"));//event_name= previous name of event from database
+                desc = c.getString(c.getColumnIndex("description"));//desc= previous description of event from database
+                eve_start_date = c.getString(c.getColumnIndex("event_start_date"));//eve_date= previous date of event from database
+                eve_end_date = c.getString(c.getColumnIndex("event_end_date"));
+                start_strtime = c.getString(c.getColumnIndex("start_time"));//start_strtime= previous stime from database
+                end_strtime = c.getString(c.getColumnIndex("end_time"));//end_strtime = previous etime from database
+                bluetooth = c.getString(c.getColumnIndex("bluetooth"));//to check the previously "entered" bluetooth state
+                wifi1 = c.getString(c.getColumnIndex("wifi"));//getting earlier wifi toggle button state
+                mobile_data = c.getString(c.getColumnIndex("mobile_data"));//getting earlier mobile data toggle button state
+                profile_status = c.getString(c.getColumnIndex("profile"));//getting profile selected earlier
+                final_repeat = c.getString(c.getColumnIndex("repeat"));
+                repeat_until=c.getString(c.getColumnIndex("repeat_until"));
+                cur_dayofweek_for_cus_monthly_rep=c.getString(c.getColumnIndex("cur_dayofweek_for_cus_monthly_rep"));
+
+
+                //to set the fields to the values entered earlier
+                editText_name.setText(event_name);//eve_name1(textfield)= name of the event
+                editText_desc.setText(desc);//descrip1(textfield)= description of the event
+                editText_start_date.setText(eve_start_date);
+                editText_end_date.setText(eve_end_date);
+                editText_stime.setText(start_strtime);
+                editText_etime.setText(end_strtime);
+                if(final_repeat.charAt(0)=='0')
+                {
+                    editText_repeat.setText("Does not Repeat");
+                }
+                else if(final_repeat.charAt(0)=='1')
+                {
+                    editText_repeat.setText("Every Day");
+                }
+                else if(final_repeat.charAt(0)=='2')
+                {
+                    editText_repeat.setText("Every Week");
+                }
+                else if(final_repeat.charAt(0)=='3')
+                {
+                    editText_repeat.setText("Every Month");
+                }
+                else if(final_repeat.charAt(0)=='4')
+                {
+                    editText_repeat.setText("Every Year");
+                }
+                else
+                {
+                    String rep_edittext_string="";
+                    switch (final_repeat.charAt(2))
+                    {
+                        case '0':if(final_repeat.substring(4).equals("1"))
+                            rep_edittext_string="Repeats daily";
+                        else
+                            rep_edittext_string="Repeats every "+final_repeat.substring(4)+" days";
+
+                            break;
+
+
+
+                        case '1':if((final_repeat.charAt(4)=='1')&&(final_repeat.charAt(5)=='_'))
+                            rep_edittext_string="Repeats weekly on ";
+                        else
+                            rep_edittext_string="Repeats every "+final_repeat.substring(4,final_repeat.length()-8)+" weeks on ";
+                            int index=final_repeat.length()-7;
+                            int comma=0;
+                            if(final_repeat.charAt(index)=='1'){
+                                rep_edittext_string=rep_edittext_string.concat("Mon");
+                                comma=1;
+                            }
+                            index++;
+                            if(final_repeat.charAt(index)=='1'){
+                                if(comma==1)
+                                {
+                                    rep_edittext_string=rep_edittext_string.concat(",Tue");
+                                }
+                                else{
+                                    rep_edittext_string=rep_edittext_string.concat("Tue");
+                                    comma=1;
+                                }
+                            }
+                            index++;
+                            if(final_repeat.charAt(index)=='1'){
+                                if(comma==1){
+                                    rep_edittext_string=rep_edittext_string.concat(",Wed");
+                                }
+                                else{
+                                    rep_edittext_string=rep_edittext_string.concat("Wed");
+                                    comma=1;
+                                }
+                            }
+                            index++;
+                            if(final_repeat.charAt(index)=='1'){
+                                if(comma==1){
+                                    rep_edittext_string=rep_edittext_string.concat(",Thu");
+                                }
+                                else{
+                                    rep_edittext_string=rep_edittext_string.concat("Thu");
+                                    comma=1;
+                                }
+                            }
+                            index++;
+                            if(final_repeat.charAt(index)=='1'){
+                                if(comma==1){
+                                    rep_edittext_string=rep_edittext_string.concat(",Fri");
+                                }
+                                else{
+                                    rep_edittext_string=rep_edittext_string.concat("Fri");
+                                    comma=1;
+                                }
+                            }
+                            index++;
+                            if(final_repeat.charAt(index)=='1'){
+                                if(comma==1){
+                                    rep_edittext_string=rep_edittext_string.concat(",Sat");
+                                }
+                                else{
+                                    rep_edittext_string=rep_edittext_string.concat("Sat");
+                                    comma=1;
+                                }
+                            }
+                            index++;
+                            if(final_repeat.charAt(index)=='1'){
+                                if(comma==1){
+                                    rep_edittext_string=rep_edittext_string.concat(",Sun");
+                                }
+                                else{
+                                    rep_edittext_string=rep_edittext_string.concat("Sun");
+                                }
+                            }
+
+                            break;
+
+
+                        case '2':if((final_repeat.charAt(4)=='1')&&(final_repeat.charAt(5)=='_'))
+                            rep_edittext_string="Repeats monthly";
+                        else
+                            rep_edittext_string="Repeats every "+final_repeat.substring(4,final_repeat.length()-2)+" months ";
+
+                            if(final_repeat.charAt(final_repeat.length()-1)=='2') {
+
+                                rep_edittext_string = rep_edittext_string.concat(cur_dayofweek_for_cus_monthly_rep);
+                            }
+                            break;
+
+
+                        case '3':if(final_repeat.substring(4).equals("1"))
+                            rep_edittext_string="Repeats yearly";
+                        else
+                            rep_edittext_string="Repeats every "+final_repeat.substring(4)+" years";
+
+                            break;
+
+                    }
+
+
+                    switch (repeat_until.charAt(0)) {
+                        case '1':
+                            rep_edittext_string = rep_edittext_string.concat(";until " + repeat_until.substring(2));
+                            break;
+                        case '2':
+                            rep_edittext_string = rep_edittext_string.concat(";for " + repeat_until.substring(2) + " times");
+                            break;
+                    }
+                    editText_repeat.setText(rep_edittext_string);
+
+                }
+
+
+                //in this way we are able to show all the previously entered information so that user doesn't have to rewrite everything
+
+
+                shour = start_strtime.charAt(1) - '0' + (start_strtime.charAt(0) - '0') * 10;//shour = start hour in integer
+                sminute = start_strtime.charAt(4) - '0' + (start_strtime.charAt(3) - '0') * 10;//sminute= start min in int
+                ehour = end_strtime.charAt(1) - '0' + (end_strtime.charAt(0) - '0') * 10;//ehour= end hour in int
+                eminute = end_strtime.charAt(4) - '0' + (end_strtime.charAt(3) - '0') * 10;//eminute= end min in int
+
+                start_yr = (eve_start_date.charAt(6) - '0') * 1000 + (eve_start_date.charAt(7) - '0') * 100 + (eve_start_date.charAt(8) - '0') * 10 + (eve_start_date.charAt(9) - '0');
+                //yr= year in int
+                start_month = (eve_start_date.charAt(3) - '0') * 10 + (eve_start_date.charAt(4) - '0');//month= month in int
+                start_month--;//month is 1 less by default in android
+                start_day = (eve_start_date.charAt(0) - '0') * 10 + (eve_start_date.charAt(1) - '0');//day= date in int
+
+
+                end_yr = (eve_end_date.charAt(6) - '0') * 1000 + (eve_end_date.charAt(7) - '0') * 100 + (eve_end_date.charAt(8) - '0') * 10 + (eve_end_date.charAt(9) - '0');
+                //yr= year in int
+                end_month = (eve_end_date.charAt(3) - '0') * 10 + (eve_end_date.charAt(4) - '0');//month= month in int
+                end_month--;//month is 1 less by default in android
+                end_day = (eve_end_date.charAt(0) - '0') * 10 + (eve_end_date.charAt(1) - '0');//day= date in int
+
+
+                db1.close();//closing the database
+
             }
         }
-
-        //if edit is called
-        if(flag==1)
+        else
         {
-            textView.setText("Edit Event");
 
-
-            //req_name is name of the profile to be edited
-            //req_name is sent to createvent from mainactivity if user wants to edit the event
-            //if a new event is created then req_name contains the value to which it was initialized in mainacitivity
-            req_name= intent.getStringExtra("der_name");
-            DBAdapter db1 = new DBAdapter(CreateEvent.this);
-            db1.open();
-
-            Cursor c;
-            //to get details of all events with name=req_name
-            c=db1.getEventsDetail(req_name);
-
-            c.moveToFirst();
-
-                //to check the days which were checked earlier
-                if(c.getInt(c.getColumnIndex("monday"))==1) {
-                    itemsChecked[0] = true;
-                    previous_itemsChecked[0] = true;
-                }
-            else
-                {
-                    itemsChecked[0] = false;
-                    previous_itemsChecked[0] = false;
-                }
-
-
-            if(c.getInt(c.getColumnIndex("tuesday"))==1) {
-                itemsChecked[1] = true;
-                previous_itemsChecked[1] = true;
-            }
-            else
+            flag= custom_sharedpreferences.getInt("flag", 0);
+            if(flag==1)
             {
-                itemsChecked[1] = false;
-                previous_itemsChecked[1] = false;
+                TextView textView = (TextView) findViewById(R.id.textView2);// textview -> reference object to title
+                textView.setText("Edit Event");//title set to "edit event"
             }
+            event_name=custom_sharedpreferences.getString("name", null);
+            desc=custom_sharedpreferences.getString("description", null);
+            eve_start_date=custom_sharedpreferences.getString("start_date", null);
+            eve_end_date=custom_sharedpreferences.getString("end_date", null);
+            start_strtime=custom_sharedpreferences.getString("start_time", null);
+            end_strtime=custom_sharedpreferences.getString("end_time", null);
+            start_date_set=custom_sharedpreferences.getInt("start_date_set", 0);
+            end_date_set=custom_sharedpreferences.getInt("end_date_set", 0);
+            start_time_set=custom_sharedpreferences.getInt("start_time_set", 0);
+            end_time_set=custom_sharedpreferences.getInt("end_time_set", 0);
+            id_to_be_edited=custom_sharedpreferences.getInt("id_to_be_edited", 0);
+            final_repeat=custom_sharedpreferences.getString("custom_repeat",null);
+            repeat_until=custom_sharedpreferences.getString("repeat_until",null);
+            cur_dayofweek_for_cus_monthly_rep=custom_sharedpreferences.getString("cur_dayofweek_for_cus_monthly_rep",null);
 
-
-            if(c.getInt(c.getColumnIndex("wednesday"))==1) {
-                itemsChecked[2] = true;
-                previous_itemsChecked[2] = true;
-            }
-            else
-            {
-                itemsChecked[2] = false;
-                previous_itemsChecked[2] = false;
-            }
-
-
-            if(c.getInt(c.getColumnIndex("thursday"))==1) {
-                itemsChecked[3] = true;
-                previous_itemsChecked[3] = true;
-            }
-            else
-            {
-                itemsChecked[3] = false;
-                previous_itemsChecked[3] = false;
-            }
-
-
-            if(c.getInt(c.getColumnIndex("friday"))==1) {
-                itemsChecked[4] = true;
-                previous_itemsChecked[4] = true;
-            }
-            else
-            {
-                itemsChecked[4] = false;
-                previous_itemsChecked[4] = false;
-            }
-
-
-            if(c.getInt(c.getColumnIndex("saturday"))==1) {
-                itemsChecked[5] = true;
-                previous_itemsChecked[5] = true;
-            }
-            else
-            {
-                itemsChecked[5] = false;
-                previous_itemsChecked[5] = false;
-            }
-
-
-            if(c.getInt(c.getColumnIndex("sunday"))==1) {
-                itemsChecked[6] = true;
-                previous_itemsChecked[6] = true;
-            }
-            else
-            {
-                itemsChecked[6] = false;
-                previous_itemsChecked[6] = false;
-            }
+            bluetooth=custom_sharedpreferences.getString("bluetooth",null);
+            wifi1=custom_sharedpreferences.getString("wifi",null);
+            mobile_data=custom_sharedpreferences.getString("mobile_data",null);
+            profile_status=custom_sharedpreferences.getString("profile",null);
 
 
 
-            int switch_check=0;
-            //to set the switch to on if it was on at time of its creation
-            //first check if it was on by checking if the event was supposed to repeat on some day
-            for(int i=0;i<7;i++)
-            {
-                if(itemsChecked[i]==true)
-                {
-                    switch_check=1;
-                    break;
-                }
-            }
-
-
-            if(switch_check==1)
-            {
-                s.setChecked(true);
-            }
-            else
-            {
-                s.setChecked(false);
-            }
 
             //to set the fields to the values entered earlier
-            EditText name= (EditText)findViewById(R.id.eve_name);
-            name.setText(c.getString(c.getColumnIndex("event_name")));
+            editText_name.setText(event_name);//eve_name1(textfield)= name of the event
+            editText_desc.setText(desc);//descrip1(textfield)= description of the event
+            editText_start_date.setText(eve_start_date);
+            editText_end_date.setText(eve_end_date);
+            editText_stime.setText(start_strtime);
+            editText_etime.setText(end_strtime);
+            String rep_edittext_string="";
+            switch (final_repeat.charAt(2))
+            {
+                case '0':if(final_repeat.substring(4).equals("1"))
+                            rep_edittext_string="Repeats daily";
+                        else
+                            rep_edittext_string="Repeats every "+final_repeat.substring(4)+" days";
 
-            name= (EditText)findViewById(R.id.descrip);
-            name.setText(c.getString(c.getColumnIndex("description")));
-            Button bt = (Button)findViewById(R.id.button2);
-           bt.setText(c.getString(c.getColumnIndex("event_date")));
-
-            bt = (Button)findViewById(R.id.button3);
-            bt.setText(c.getString(c.getColumnIndex("start_time")));
-
-            bt = (Button)findViewById(R.id.button4);
-            bt.setText(c.getString(c.getColumnIndex("end_time")));
-            event_name= c.getString(c.getColumnIndex("event_name"));
-            desc= c.getString(c.getColumnIndex("description"));
-            eve_date= c.getString(c.getColumnIndex("event_date"));
-            start_strtime=c.getString(c.getColumnIndex("start_time"));
-            end_strtime= c.getString(c.getColumnIndex("end_time"));
+                    break;
 
 
-            db1.close();
+
+                case '1':if(final_repeat.substring(4).equals("1"))
+                            rep_edittext_string="Repeats weekly on ";
+                        else
+                            rep_edittext_string="Repeats every "+final_repeat.substring(4,final_repeat.length()-8)+" weeks on ";
+                            int index=final_repeat.length()-7;
+                            int comma=0;
+                            if(final_repeat.charAt(index)=='1'){
+                                rep_edittext_string=rep_edittext_string.concat("Mon");
+                                comma=1;
+                            }
+                            index++;
+                            if(final_repeat.charAt(index)=='1'){
+                                if(comma==1)
+                                {
+                                    rep_edittext_string=rep_edittext_string.concat(",Tue");
+                                }
+                                else{
+                                    rep_edittext_string=rep_edittext_string.concat("Tue");
+                                    comma=1;
+                                }
+                            }
+                            index++;
+                            if(final_repeat.charAt(index)=='1'){
+                                if(comma==1){
+                                    rep_edittext_string=rep_edittext_string.concat(",Wed");
+                                }
+                                else{
+                                    rep_edittext_string=rep_edittext_string.concat("Wed");
+                                    comma=1;
+                                }
+                            }
+                            index++;
+                            if(final_repeat.charAt(index)=='1'){
+                                if(comma==1){
+                                    rep_edittext_string=rep_edittext_string.concat(",Thu");
+                                }
+                                else{
+                                    rep_edittext_string=rep_edittext_string.concat("Thu");
+                                    comma=1;
+                                }
+                            }
+                            index++;
+                            if(final_repeat.charAt(index)=='1'){
+                                if(comma==1){
+                                    rep_edittext_string=rep_edittext_string.concat(",Fri");
+                                }
+                                else{
+                                    rep_edittext_string=rep_edittext_string.concat("Fri");
+                                comma=1;
+                                }
+                            }
+                            index++;
+                            if(final_repeat.charAt(index)=='1'){
+                                if(comma==1){
+                                    rep_edittext_string=rep_edittext_string.concat(",Sat");
+                                }
+                                else{
+                                    rep_edittext_string=rep_edittext_string.concat("Sat");
+                                comma=1;
+                                }
+                            }
+                            index++;
+                            if(final_repeat.charAt(index)=='1'){
+                                if(comma==1){
+                                    rep_edittext_string=rep_edittext_string.concat(",Sun");
+                                }
+                                else{
+                                    rep_edittext_string=rep_edittext_string.concat("Sun");
+                                }
+                            }
+
+                    break;
+
+
+                case '2':if(final_repeat.substring(4).equals("1"))
+                            rep_edittext_string="Repeats monthly";
+                        else
+                            rep_edittext_string="Repeats every "+final_repeat.substring(4,final_repeat.length()-2)+" months ";
+
+                    if(final_repeat.charAt(final_repeat.length()-1)=='2') {
+
+                        rep_edittext_string = rep_edittext_string.concat(cur_dayofweek_for_cus_monthly_rep);
+                    }
+                    break;
+
+
+                case '3':if(final_repeat.substring(4).equals("1"))
+                            rep_edittext_string="Repeats yearly";
+                        else
+                            rep_edittext_string="Repeats every "+final_repeat.substring(4)+" years";
+
+                    break;
+
+            }
+
+
+        switch (repeat_until.charAt(0)) {
+            case '1':
+                rep_edittext_string = rep_edittext_string.concat(";until " + repeat_until.substring(2));
+                break;
+            case '2':
+                rep_edittext_string = rep_edittext_string.concat(";for " + repeat_until.substring(2) + " times");
+                break;
+        }
+            editText_repeat.setText(rep_edittext_string);
+
+
+
+            if(!start_strtime.equals("")) {
+                shour = start_strtime.charAt(1) - '0' + (start_strtime.charAt(0) - '0') * 10;//shour = start hour in integer
+                sminute = start_strtime.charAt(4) - '0' + (start_strtime.charAt(3) - '0') * 10;//sminute= start min in int
+            }
+            if(!end_strtime.equals("")) {
+                ehour = end_strtime.charAt(1) - '0' + (end_strtime.charAt(0) - '0') * 10;//ehour= end hour in int
+                eminute = end_strtime.charAt(4) - '0' + (end_strtime.charAt(3) - '0') * 10;//eminute= end min in int
+            }
+            if(!eve_start_date.equals("")) {
+                start_yr = (eve_start_date.charAt(6) - '0') * 1000 + (eve_start_date.charAt(7) - '0') * 100 + (eve_start_date.charAt(8) - '0') * 10 + (eve_start_date.charAt(9) - '0');
+                //yr= year in int
+                start_month = (eve_start_date.charAt(3) - '0') * 10 + (eve_start_date.charAt(4) - '0');//month= month in int
+                start_month--;//month is 1 less by default in android
+                start_day = (eve_start_date.charAt(0) - '0') * 10 + (eve_start_date.charAt(1) - '0');//day= date in int
+            }
+
+            if(!eve_end_date.equals("")) {
+                end_yr = (eve_end_date.charAt(6) - '0') * 1000 + (eve_end_date.charAt(7) - '0') * 100 + (eve_end_date.charAt(8) - '0') * 10 + (eve_end_date.charAt(9) - '0');
+                //yr= year in int
+                end_month = (eve_end_date.charAt(3) - '0') * 10 + (eve_end_date.charAt(4) - '0');//month= month in int
+                end_month--;//month is 1 less by default in android
+                end_day = (eve_end_date.charAt(0) - '0') * 10 + (eve_end_date.charAt(1) - '0');//day= date in int
+            }
+
 
         }
 
 
-        //on click listener for repeation switch
-        s.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(isChecked)
-                {
-                    //to set the current checked values to the previously checked values
-                    for(int i=0;i<=6;i++)
-                    {
-                        itemsChecked[i]=previous_itemsChecked[i];
-                    }
-                    //to show dialog box of repetition of days
-                    showDialog(9);
-                }
-                else {
-                    for(int i=0;i<=6;i++)
-                    {
-                        itemsChecked[i]=false;
-                        previous_itemsChecked[i]=false;
-                    }
-
-                }
-
-            }
-        });
-
     }
+
 
 
 
     //back button override......sends the app back to mainactivity screen
     @Override
-    public void onBackPressed() {
+    public void onBackPressed()
+    {
         Intent intent = new Intent(CreateEvent.this,MainActivity.class);
-
         startActivity(intent);
-
     }
+
+
 
 
 
@@ -279,118 +561,468 @@ public class CreateEvent extends ActionBarActivity {
     //calls SetToggles activity
     //on click listener for set toggles button
     //sends the data of create event to set toggles
-    public void set_toggles(View view){
+    public void set_toggles(View view)
+    {
+
+        Intent intent = new Intent(CreateEvent.this, SetToggles.class);//intent for settoggles activity is created
 
 
-        //eve_name1 contains the name of event which is getting created
-        event_name = eve_name1.getText().toString();
 
-        //descrip1 contains the desc of event which is to be created
-         desc = descrip1.getText().toString();
+        event_name = editText_name.getText().toString();//event_name contains the name of event (which is getting created) or (edited name)
+        desc = editText_desc.getText().toString();//desc contains the desc of event (which is to be created) or (edited desc)
 
 
-        //intent for settoggles activity is created
-        Intent intent = new Intent(CreateEvent.this, SetToggles.class);
+
+
+
         //name description date(in string) starttime(in string) endtime(in string) day(intrger) month(integer) year(integer) start hour(integer)
         //start minute(integer) end minute(integer) end hour(integer)
-        intent.putExtra("Name",event_name);
-        intent.putExtra("Description",desc);
-        intent.putExtra("Date",eve_date);
-        intent.putExtra("STime",start_strtime);
-        intent.putExtra("ETime",end_strtime);
-        intent.putExtra("req_name",req_name);
-        intent.putExtra("int_day",day);
-        intent.putExtra("int_month",month);
-        intent.putExtra("int_year",yr);
-        intent.putExtra("int_shour",shour);
-        intent.putExtra("int_ehour",ehour);
-        intent.putExtra("int_sminute",sminute);
-        intent.putExtra("int_eminute",eminute);
-        //add initialized to 0
-        int add=0;
+        intent.putExtra("Name", event_name);
+        intent.putExtra("Description", desc);
+        intent.putExtra("start_date", eve_start_date);
+        intent.putExtra("end_date",eve_end_date);
+        intent.putExtra("STime", start_strtime);//all details sent to settoggles
+        intent.putExtra("ETime", end_strtime);
+        intent.putExtra("int_start_day", start_day);
+        intent.putExtra("int_end_day",end_day);
+        intent.putExtra("int_start_month", start_month);
+        intent.putExtra("int_end_month",end_month);
+        intent.putExtra("int_start_year", start_yr);
+        intent.putExtra("int_end_year",end_yr);
+        intent.putExtra("int_shour", shour);
+        intent.putExtra("int_ehour", ehour);
+        intent.putExtra("int_sminute", sminute);
+        intent.putExtra("int_eminute", eminute);
+        intent.putExtra("custom_repeat",final_repeat);
+        intent.putExtra("repeat_until",repeat_until);
+        intent.putExtra("cur_dayofweek_for_cus_monthly_rep",cur_dayofweek_for_cus_monthly_rep);
 
-        //to show if any day was checked in repeat dialog box
 
-        for(int i=0;i<=6;i++)
+
+        if (flag == 1)//if event was edited then send the other details for fields on toggles page too
         {
-            if(previous_itemsChecked[i])
-            {
-               Toast.makeText(getBaseContext(),"day="+items[i],Toast.LENGTH_SHORT).show();
-                add=1;
-                break;
-            }
+            intent.putExtra("id_to_be_edited",id_to_be_edited);
+            intent.putExtra("bluetooth", bluetooth);
+            intent.putExtra("wifi", wifi1);//these values have been obtained from database
+            intent.putExtra("mobile_data", mobile_data);
+            intent.putExtra("profile", profile_status);
         }
-        //add=0 means that there is no repeat or no day is checked in repeat dialog
-        //add=1 means that event is to be repeated
 
-
-            //previous_items checked[i]=1 means that day no i was checked
-        //previous items is sent to set toggles
-            if (previous_itemsChecked[0])
-                intent.putExtra("int_mon", 1);
-            else
-                intent.putExtra("int_mon", 0);
-            if (previous_itemsChecked[1])
-                intent.putExtra("int_tue", 1);
-            else
-                intent.putExtra("int_tue", 0);
-            if (previous_itemsChecked[2])
-                intent.putExtra("int_wed", 1);
-            else
-                intent.putExtra("int_wed", 0);
-            if (previous_itemsChecked[3])
-                intent.putExtra("int_thu", 1);
-            else
-                intent.putExtra("int_thu", 0);
-            if (previous_itemsChecked[4])
-                intent.putExtra("int_fri", 1);
-            else
-                intent.putExtra("int_fri", 0);
-            if (previous_itemsChecked[5])
-                intent.putExtra("int_sat", 1);
-            else
-                intent.putExtra("int_sat", 0);
-            if (previous_itemsChecked[6])
-                intent.putExtra("int_sun", 1);
-            else
-                intent.putExtra("int_sun", 0);
-
-       //add is sent to settoggles
-        intent.putExtra("add",add);
 
 
         //flag=1 means that edit event is to be performed
         //flag=0 means that new event is to be created
 
-        if(flag==1)
-        intent.putExtra("flag",1);
+        intent.putExtra("flag", flag);
+
+
+
+
+
+        if(event_name.equals("")) //if event name hasn't been entered
+        {
+            Toast.makeText(getBaseContext(), "Please enter the name of the event", Toast.LENGTH_SHORT).show();
+        }
         else
-        intent.putExtra("flag",0);
+        {
+            if(start_date_set==0)//if date hasn't been entered.....eve_date was initaialized to "yo"
+            {
+                Toast.makeText(getBaseContext(),"Please enter the start date",Toast.LENGTH_SHORT).show();
+            }
+            else
+            {
+                if(end_date_set==0)
+                {
+                    Toast.makeText(getBaseContext(),"Please enter the end date",Toast.LENGTH_SHORT).show();
+                }
+                else
+                {
+                    if (start_time_set == 0)//if stime hasn't been entered
+                    {
+                        Toast.makeText(getBaseContext(), "Please enter the starting time", Toast.LENGTH_SHORT).show();
+                    }
+                    else
+                    {
+                        if (end_time_set == 0)//if end time wasn't entered by user
+                        {
+                            Toast.makeText(getBaseContext(), "Please enter the ending time", Toast.LENGTH_SHORT).show();
+                        }
+                        else//check if start time has already passed
+                        {
+                            Calendar calNow = Calendar.getInstance();
+                            Calendar calSet = (Calendar) calNow.clone();//calset contains the calender instance of the time when event should start
+                            calSet.set(Calendar.YEAR, start_yr);
+                            calSet.set(Calendar.MONTH, start_month);
+                            calSet.set(Calendar.DAY_OF_MONTH, start_day);
+                            calSet.set(Calendar.HOUR_OF_DAY, shour);
+                            calSet.set(Calendar.MINUTE, sminute);
+                            calSet.set(Calendar.SECOND, 0);
+                            calSet.set(Calendar.MILLISECOND, 0);
 
-        //settoggles intent is called
-        startActivity(intent);
+
+                            //if the event start time has not yet passed
+
+                            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+                            Date cur_date=new Date(calNow.get(Calendar.YEAR)-1900,calNow.get(Calendar.MONTH),calNow.get(Calendar.DAY_OF_MONTH));
+                            String cur_date1=dateFormat.format(cur_date);
+
+
+                            SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+                            Date cur_time = new Date(0,0,0, calNow.get(Calendar.HOUR_OF_DAY),calNow.get(Calendar.MINUTE));
+                            //start_time contains start time in string format
+                            String cur_time1 = timeFormat.format(cur_time);
+
+                            if(date_identifier1(eve_start_date, cur_date1)==2)
+                            {
+                                int check=checkoverlap();
+                                if(check==0)
+                                {
+                                    startActivity(intent);
+                                }
+                            }
+                            else if(date_identifier1(eve_start_date,cur_date1)==3)
+                            {
+                                if(time_identifier1(start_strtime,cur_time1)!=1)
+                                {
+                                    int check=checkoverlap();
+                                    if(check==0)
+                                    {
+                                        startActivity(intent);
+                                    }
+                                }
+                                else
+                                {
+                                    Toast.makeText(getBaseContext(), "Starting time has already passed", Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                            else
+                            {
+                                Toast.makeText(getBaseContext(), "Starting time has already passed", Toast.LENGTH_SHORT).show();
+                            }
+
+
+
+                           /* //if current year is smaller than start time year
+                            if (calNow.get(Calendar.YEAR) < calSet.get(Calendar.YEAR))
+                            {
+                                int check=checkoverlap();
+                                if(check==0) {
+                                    startActivity(intent);
+                                }
+                            }
+                            //if current year is same as start time year
+                            else if (calNow.get(Calendar.YEAR) == calSet.get(Calendar.YEAR))
+                            {
+                                if (calNow.get(Calendar.MONTH) < calSet.get(Calendar.MONTH))
+                                {
+                                    int check=checkoverlap();
+                                    if(check==0) {
+                                        startActivity(intent);
+                                    }
+                                }
+                                else if (calNow.get(Calendar.MONTH) == calSet.get(Calendar.MONTH))
+                                {
+                                    if (calNow.get(Calendar.DAY_OF_MONTH) < calSet.get(Calendar.DAY_OF_MONTH))
+                                    {
+                                        int check=checkoverlap();
+                                        if(check==0) {
+                                            startActivity(intent);
+                                        }
+                                    }
+                                    else if (calNow.get(Calendar.DAY_OF_MONTH) == calSet.get(Calendar.DAY_OF_MONTH))
+                                    {
+                                        if (calNow.get(Calendar.HOUR_OF_DAY) < calSet.get(Calendar.HOUR_OF_DAY))
+                                        {
+                                            int check=checkoverlap();
+                                            if(check==0) {
+                                                startActivity(intent);
+                                            }
+                                        }
+                                        else if (calNow.get(Calendar.HOUR_OF_DAY) == calSet.get(Calendar.HOUR_OF_DAY))
+                                        {
+                                            if (calNow.get(Calendar.MINUTE) < calSet.get(Calendar.MINUTE))
+                                            {
+                                                int check=checkoverlap();
+                                                if(check==0) {
+                                                    startActivity(intent);
+                                                }
+                                            }
+                                            else if (calNow.get(Calendar.MINUTE) == calSet.get(Calendar.MINUTE))
+                                            {
+                                                int check=checkoverlap();
+                                                if(check==0) {
+                                                    startActivity(intent);
+                                                }
+                                            }
+                                            else
+                                                Toast.makeText(getBaseContext(), "Starting time has already passed", Toast.LENGTH_SHORT).show();
+                                        }
+                                        else
+                                            Toast.makeText(getBaseContext(), "Starting time has already passed", Toast.LENGTH_SHORT).show();
+                                    }
+                                    else
+                                        Toast.makeText(getBaseContext(), "Starting time has already passed", Toast.LENGTH_SHORT).show();
+                                }
+                                else
+                                    Toast.makeText(getBaseContext(), "Starting time has already passed", Toast.LENGTH_SHORT).show();
+                            }
+                            else
+                                Toast.makeText(getBaseContext(), "Starting time has already passed", Toast.LENGTH_SHORT).show();*/
+                        }
+                    }
+                }
+            }
+        }
     }
 
 
 
 
-//opens the dialog box for setting date of the event
-    public void setdate(View view)
+    public int checkoverlap()
     {
+        int overlap=0;
 
-        showDialog(DATE_DIALOG_ID);
+        Date start_date1 = new Date(start_yr, start_month, start_day-1, 0, 0);//date1 contains the current entered date of the event
+        SimpleDateFormat outFormat = new SimpleDateFormat("EEEE");
+        String start_goal = outFormat.format(start_date1);//for finding day at current date
+
+        Date end_date1 = new Date(end_yr, end_month, end_day-1, 0, 0);//date1 contains the current entered date of the event
+        String end_goal = outFormat.format(end_date1);//for finding day at current date
+
+
+
+
+
+        DBAdapter db = new DBAdapter(this);
+        db.open();//open database containing event details
+        Cursor c1 = db.getAllEventsDetails();//retrieves all the existing events details from the database
+        db.close();//database was opened somewhere above
+
+
+        return overlap;
     }
+
+
+
+
+
+
+
+
+
+
+    //returns 1 if time1<time2
+    //returns 2 if time1>time2
+    public int time_identifier1(String time1,String time2) {
+
+        int asci1 = 0, asci2 = 0, as;
+        int i;
+        for (i = 0; i <= 4; i++)
+        {
+            //ch gets the char at position i in string time1
+            char ch = time1.charAt(i);
+            if(ch!=':')
+            {
+                as = (int) ch;
+                as = as - 48;
+                int j;
+                j = (int) Math.pow(10, 4 - i);
+                as = as * j;
+                asci1 = asci1 + as;
+            }
+        }
+        for (i = 0; i <= 4; i++)
+        {
+
+            char ch = time2.charAt(i);
+            if(ch!=':')
+            {
+                as = (int) ch;
+                as = as - 48;
+                int j;
+                j = (int) Math.pow(10, 4 - i);
+                as = as * j;
+                asci2 = asci2 + as;
+            }
+        }
+        //asci1 contains the polynomial hashing value of time1 string
+        //asci2 contains the polynomial hashing value of time2 string
+        if(asci1==asci2)
+            return 3;
+        else if(asci1<asci2)
+            return 1;
+        else
+            return 2;
+
+
+
+    }
+
+
+
+
+
+    //returns 1 if date1<date2
+    //returns2 if date1>date2
+    public int date_identifier1(String date1,String date2) {
+
+        int asci1 = 0, asci2 = 0, as;
+        int i;
+        for (i = 6; i <= 9; i++)
+        {
+
+            char ch = date1.charAt(i);
+
+            as = (int) ch;
+            as = as - 48;
+            int j;
+            j = (int) Math.pow(10, 14 - i);
+            as = as * j;
+            asci1 = asci1 + as;
+
+        }
+
+
+        char ch = date1.charAt(3);
+
+        as = (int) ch;
+        as = as - 48;
+        int j;
+        j = (int) Math.pow(10, 3);
+        as = as * j;
+        asci1 = asci1 + as;
+
+        ch = date1.charAt(4);
+
+        as = (int) ch;
+        as = as - 48;
+
+        j = (int) Math.pow(10, 2);
+        as = as * j;
+        asci1 = asci1 + as;
+
+        ch = date1.charAt(0);
+
+        as = (int) ch;
+        as = as - 48;
+
+        j = (int) Math.pow(10, 1);
+        as = as * j;
+        asci1 = asci1 + as;
+
+        ch = date1.charAt(1);
+
+        as = (int) ch;
+        as = as - 48;
+
+        j = (int) Math.pow(10, 0);
+        as = as * j;
+        asci1 = asci1 + as;
+
+        for (i = 6; i <= 9; i++)
+        {
+
+            ch = date2.charAt(i);
+
+            as = (int) ch;
+            as = as - 48;
+
+            j = (int) Math.pow(10, 14 - i);
+            as = as * j;
+            asci2 = asci2 + as;
+
+        }
+
+
+        ch = date2.charAt(3);
+
+        as = (int) ch;
+        as = as - 48;
+
+        j = (int) Math.pow(10, 3);
+        as = as * j;
+        asci2 = asci2 + as;
+
+        ch = date2.charAt(4);
+
+        as = (int) ch;
+        as = as - 48;
+
+        j = (int) Math.pow(10, 2);
+        as = as * j;
+        asci2 = asci2+ as;
+
+        ch = date2.charAt(0);
+
+        as = (int) ch;
+        as = as - 48;
+
+        j = (int) Math.pow(10, 1);
+        as = as * j;
+        asci2 = asci2 + as;
+
+        ch = date2.charAt(1);
+
+        as = (int) ch;
+        as = as - 48;
+
+        j = (int) Math.pow(10, 0);
+        as = as * j;
+        asci2 = asci2 + as;
+
+        if(asci1==asci2)
+            return 3;
+        else if(asci1<asci2)
+            return 1;
+        else
+            return 2;
+
+    }
+
+
+
+
+
+    //opens the dialog box for setting date of the event
+    public void set_start_date(View view)
+    {
+        InputMethodManager im = (InputMethodManager)getSystemService(getBaseContext().INPUT_METHOD_SERVICE);
+        im.hideSoftInputFromWindow(editText_start_date.getWindowToken(), 0);
+        showDialog(1);
+
+    }
+
+    //opens the dialog box for setting date of the event
+    public void set_end_date(View view)
+    {
+        InputMethodManager im = (InputMethodManager)getSystemService(getBaseContext().INPUT_METHOD_SERVICE);
+        im.hideSoftInputFromWindow(editText_end_date.getWindowToken(), 0);
+        showDialog(4);
+
+    }
+
 
     //opens the dialog box for setting start time of the event
     public void setstart_time(View view)
     {
-        showDialog(TIME_DIALOG_ID);
+        InputMethodManager im = (InputMethodManager)getSystemService(getBaseContext().INPUT_METHOD_SERVICE);
+        im.hideSoftInputFromWindow(editText_stime.getWindowToken(), 0);
+        showDialog(0);
     }
 
     //opens the dialog box for setting end time of the event
     public void setend_time(View view)
     {
+        InputMethodManager im = (InputMethodManager)getSystemService(getBaseContext().INPUT_METHOD_SERVICE);
+        im.hideSoftInputFromWindow(editText_etime.getWindowToken(), 0);
         showDialog(2);
+    }
+
+    public void set_repeat(View view)
+    {
+        InputMethodManager im = (InputMethodManager)getSystemService(getBaseContext().INPUT_METHOD_SERVICE);
+        im.hideSoftInputFromWindow(editText_repeat.getWindowToken(), 0);
+        showDialog(5);
     }
 
 
@@ -409,83 +1041,211 @@ public class CreateEvent extends ActionBarActivity {
                         this, new DatePickerDialog.OnDateSetListener(){
                     @Override
                     public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
-                        yr= year;
-                        month= monthOfYear;
-                        day = dayOfMonth;
+                        start_yr= year;
+                        start_month= monthOfYear;
+                        start_day = dayOfMonth;
                         //way of formatting date doesn't create any problem
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
-                        Date date = new Date(yr-1900,month,day,0,0);
-                        eve_date = dateFormat.format(date);
-                        //this toast shows the date selected
-                        Toast.makeText(getBaseContext(),
-                                "You have selected : " + eve_date,
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+                        Date date = new Date(start_yr-1900,start_month,start_day,0,0);
+                        eve_start_date = dateFormat.format(date);
+                        if(end_date_set==1)
+                        {
+                            int date_check=date_identifier1(eve_start_date,eve_end_date);
+                            if(date_check==3)
+                            {
+                                if((start_time_set==1)&&(end_time_set==1))
+                                {
+                                    int time_check=time_identifier1(start_strtime,end_strtime);
+                                    if((time_check==1)||(time_check==3))
+                                    {
+                                        start_date_set = 1;
+                                        editText_start_date.setText(eve_start_date);
+                                    }
+                                    else
+                                    {
+                                        Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
 
-                                Toast.LENGTH_SHORT).show();
-                        b= (Button)findViewById(R.id.button2);
-                        //date selected is displayed on the button
-                        b.setText(eve_date);
+                                    }
+                                }
+                                else
+                                {
+                                    start_date_set = 1;
+                                    editText_start_date.setText(eve_start_date);
+                                }
+                            }
+                            else if(date_check==1)
+                            {
+                                start_date_set = 1;
+                                editText_start_date.setText(eve_start_date);
+                            }
+                            else
+                            {
+                                Toast.makeText(getApplicationContext(), "Start date should be smaller or equal to end date", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(getApplicationContext(), "Start date should be smaller or equal to end date", Toast.LENGTH_SHORT).show();
+
+                            }
+                        }
+                        else
+                        {
+                            start_date_set = 1;
+                            editText_start_date.setText(eve_start_date);
+                        }
+
+
+
                     }
                 }
-                            ,yr,month,day);
+                            ,start_yr,start_month,start_day);
 
             //shows dialog box for end time
             case 2: return  new TimePickerDialog(
                     this, m1TimeSetListener, ehour, eminute , false);
 
-            //shows dialog box for repeat
-            case 9: return new AlertDialog.Builder(this)
-                    .setIcon(R.drawable.ic_launcher)
-                    .setTitle("This is a dialog with some simple text")
-
-                    .setNegativeButton("Cancel",
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int whichButton) {
 
 
+
+            case 4: return new DatePickerDialog(
+                    this, new DatePickerDialog.OnDateSetListener(){
+                @Override
+                public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
+                    end_yr= year;
+                    end_month= monthOfYear;
+                    end_day = dayOfMonth;
+                    //way of formatting date doesn't create any problem
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+                    Date date = new Date(end_yr-1900,end_month,end_day,0,0);
+
+
+                    eve_end_date = dateFormat.format(date);
+
+                    if(start_date_set==1)
+                    {
+                        int date_check=date_identifier1(eve_start_date,eve_end_date);
+                        if(date_check==3)
+                        {
+                            if((start_time_set==1)&&(end_time_set==1))
+                            {
+                                int time_check=time_identifier1(start_strtime,end_strtime);
+                                if((time_check==1)||(time_check==3))
+                                {
+                                    end_date_set = 1;
+                                    editText_end_date.setText(eve_end_date);
                                 }
-                            }
-                    )
-
-
-                    .setMultiChoiceItems(items, itemsChecked,
-                            new DialogInterface.OnMultiChoiceClickListener() {
-                                public void onClick(DialogInterface dialog,
-                                                    int which, boolean isChecked) {
-                                    //if a  day is selected then set itemchecked true for that day
-                                    if(isChecked) {
-                                        itemsChecked[which] = true;
-                                    }
-                                    else
-                                    {
-                                        itemsChecked[which]=false;
-                                    }
-                                    //shows the day which is checked or unchecked
-                                    Toast.makeText(getBaseContext(),
-                                            items[which] + (isChecked ? " checked" :"unchecked"),
-                                    Toast.LENGTH_SHORT).show();
+                                else
+                                {
+                                    Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
                                 }
+
                             }
-                    )
+                            else
+                            {
+                                end_date_set = 1;
+                                editText_end_date.setText(eve_end_date);
+                            }
+                        }
+                        else if(date_check==1)
+                        {
+                            end_date_set = 1;
+                            editText_end_date.setText(eve_end_date);
+                        }
+                        else
+                        {
+                            Toast.makeText(getApplicationContext(), "Start date should be smaller or equal to end date", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getApplicationContext(), "Start date should be smaller or equal to end date", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                    else
+                    {
+                        end_date_set = 1;
+                        editText_end_date.setText(eve_end_date);
+                    }
 
 
-                    .setPositiveButton("OK",
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int whichButton) {
+                }
+            }
+                    ,end_yr,end_month,end_day);
 
-                                    //when ok button is clicked item checked is copied into previous itemchecked
-                                    //so previous item checked contains the final selected items
-                                    for(int i=0;i<items.length;i++)
-                                    {
-                                        previous_itemsChecked[i]=itemsChecked[i];
+
+            case 5:  return new AlertDialog.Builder(this)
+
+
+                    .setItems(repeat_options1, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    final_repeat="";
+
+                                    if (which == 5) {
+                                        custom_editor.putString("name", editText_name.getText().toString());
+                                        custom_editor.commit();
+                                        custom_editor.putString("description", editText_desc.getText().toString());
+                                        custom_editor.commit();
+                                        custom_editor.putString("start_date", editText_start_date.getText().toString());
+                                        custom_editor.commit();
+                                        custom_editor.putString("end_date", editText_end_date.getText().toString());
+                                        custom_editor.commit();
+                                        custom_editor.putString("start_time", editText_stime.getText().toString());
+                                        custom_editor.commit();
+                                        custom_editor.putString("end_time", editText_etime.getText().toString());
+                                        custom_editor.commit();
+                                        custom_editor.putInt("start_date_set", start_date_set);
+                                        custom_editor.commit();
+                                        custom_editor.putInt("end_date_set", end_date_set);
+                                        custom_editor.commit();
+                                        custom_editor.putInt("start_time_set", start_time_set);
+                                        custom_editor.commit();
+                                        custom_editor.putInt("end_time_set", end_time_set);
+                                        custom_editor.commit();
+                                        custom_editor.putInt("flag", flag);
+                                        custom_editor.commit();
+                                        custom_editor.putInt("id_to_be_edited", id_to_be_edited);
+                                        custom_editor.commit();
+                                        custom_editor.putString("bluetooth", bluetooth);
+                                        custom_editor.commit();
+                                        custom_editor.putString("wifi",wifi1);
+                                        custom_editor.commit();
+                                        custom_editor.putString("mobile_data",mobile_data);
+                                        custom_editor.commit();
+                                        custom_editor.putString("profile",profile_status);
+                                        custom_editor.commit();
+
+                                        Intent intent=new Intent(CreateEvent.this,custom_rep.class);
+                                        startActivity(intent);
+
+
+                                    } else {
+                                        final_repeat=Integer.toString(which);
+                                        switch (which) {
+                                            case 0:
+                                                editText_repeat.setText("Does not Repeat");
+                                                break;
+                                            case 1:
+                                                editText_repeat.setText("Every Day");
+                                                break;
+                                            case 2:
+                                                editText_repeat.setText("Every Week");
+                                                break;
+                                            case 3:
+                                                editText_repeat.setText("Every Month");
+                                                break;
+                                            case 4:
+                                                editText_repeat.setText("Every Year");
+                                                break;
+                                        }
                                     }
-
                                 }
                             }
                     ).create();
 
+
+
         }
         return null;
     }
+
+
+
 
     //onclick listener for start time setting dialog window
     private TimePickerDialog.OnTimeSetListener mTimeSetListener =
@@ -502,17 +1262,39 @@ public class CreateEvent extends ActionBarActivity {
                     Date date = new Date(0,0,0, shour, sminute);
                     //start_time contains start time in string format
                      start_strtime = timeFormat.format(date);
-                    Toast.makeText(getBaseContext(),
-                            "You have selected "  + start_strtime,
-                            Toast.LENGTH_SHORT).show();
-                    b= (Button)findViewById(R.id.button3);
-                    b.setText(start_strtime);
+                    if((eve_start_date.equals(eve_end_date))&&(end_date_set==1)&&(start_date_set==1))
+                    {
+                        if(end_time_set==1)
+                        {
+                            int time_check=time_identifier1(start_strtime,end_strtime);
+                            if((time_check==1)||(time_check==3))
+                            {
+                                start_time_set=1;
+                                editText_stime.setText(start_strtime);
+                            }
+                            else
+                            {
+                                Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                        else
+                        {
+                            start_time_set=1;
+                            editText_stime.setText(start_strtime);
+                        }
+                    }
+                    else {
+                        start_time_set=1;
+                        editText_stime.setText(start_strtime);
+                    }
 
                 }
             };
 
 
-//on click for setting end time
+
+    //on click for setting end time
     //works in same way as onclick for start time
     private TimePickerDialog.OnTimeSetListener m1TimeSetListener =
             new TimePickerDialog.OnTimeSetListener()
@@ -525,37 +1307,35 @@ public class CreateEvent extends ActionBarActivity {
                     SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
                     Date date = new Date(0,0,0, ehour, eminute);
                     end_strtime = timeFormat.format(date);
-                    Toast.makeText(getBaseContext(),
-                            "You have selected "  + end_strtime,
-                            Toast.LENGTH_SHORT).show();
-                    b= (Button)findViewById(R.id.button4);
-                    b.setText(end_strtime);
 
+                    if((eve_start_date.equals(eve_end_date))&&(end_date_set==1)&&(start_date_set==1))
+                    {
+                        if(start_time_set==1)
+                        {
+                            int time_check=time_identifier1(start_strtime,end_strtime);
+                            if((time_check==1)||(time_check==3))
+                            {
+                                end_time_set=1;
+                                editText_etime.setText(end_strtime);
+                            }
+                            else
+                            {
+                                Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                        else
+                        {
+                            end_time_set=1;
+                            editText_etime.setText(end_strtime);
+                        }
+                    }
+                    else
+                    {
+                        end_time_set=1;
+                        editText_etime.setText(end_strtime);
+                    }
                 }
             };
 
-
-
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_create_event, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
 }
