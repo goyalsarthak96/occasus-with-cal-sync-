@@ -27,7 +27,7 @@ public class Show_details extends ActionBarActivity {
         ac.setDisplayShowHomeEnabled(true);
         ac.setLogo(R.drawable.occasus1);
         ac.setDisplayUseLogoEnabled(true);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         clicked_id=getIntent().getIntExtra("clicked_id",0);
         DBAdapter db = new DBAdapter(this);
         db.open();

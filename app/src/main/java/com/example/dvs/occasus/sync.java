@@ -10,6 +10,7 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.CalendarContract;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.support.v7.view.ActionMode;
@@ -49,6 +50,14 @@ public class sync extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sync);
+
+
+        //to add logo to action bar
+        ActionBar ac=getSupportActionBar();
+        ac.setDisplayShowHomeEnabled(true);
+        ac.setLogo(R.drawable.occasus1);
+        ac.setDisplayUseLogoEnabled(true);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);//to hide back button on action bar
 
 
     }
@@ -111,6 +120,7 @@ public class sync extends ActionBarActivity {
         {
             case 0:return new AlertDialog.Builder(this)
                     .setTitle("Calendars")
+                    .setIcon(R.drawable.calendar_dialog)
                     .setAdapter(cal_adapter, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
@@ -135,7 +145,9 @@ public class sync extends ActionBarActivity {
     }
 
 
-
-
-
+    @Override
+    public void onBackPressed() {
+        Intent in=new Intent(sync.this,MainActivity.class);
+        startActivity(in);
+    }
 }

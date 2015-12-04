@@ -135,13 +135,13 @@ public class custom_rep extends ActionBarActivity implements rep_daily.rep_daily
 
 
         // WindowManager windowManager = (WindowManager)getBaseContext().getSystemService(WINDOW_SERVICE);
-        WindowManager.LayoutParams params=getWindow().getAttributes();
+       /* WindowManager.LayoutParams params=getWindow().getAttributes();
         params.x=-20;
         params.height = 800;
         params.width = 550;
         params.y = -10;
 
-        this.getWindow().setAttributes(params);
+        this.getWindow().setAttributes(params);*/
 
 
 

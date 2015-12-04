@@ -55,7 +55,7 @@ public class quick_silent extends ActionBarActivity {
         ac.setLogo(R.drawable.occasus1);
         ac.setDisplayUseLogoEnabled(true);
         ac.setTitle("Quick Silent");
-        getSupportActionBar().setDisplayHomeAsUpEnabled(false);//to hide the back button in action bar
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);//to hide the back button in action bar
 
 
         quick_sharedpreferences = getBaseContext().getSharedPreferences(quickSilent, Context.MODE_PRIVATE);

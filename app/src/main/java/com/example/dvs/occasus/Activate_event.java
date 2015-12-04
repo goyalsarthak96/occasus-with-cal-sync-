@@ -15,6 +15,8 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
 import android.net.wifi.WifiManager;
+import android.support.v4.app.NotificationCompat;
+import android.util.EventLogTags;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -28,6 +30,8 @@ public class Activate_event extends BroadcastReceiver {
 
     Context context1;
 
+    String rep;
+
 
     Calendar calSet1=Calendar.getInstance();
     int notificationID = 2;
@@ -40,14 +44,20 @@ public class Activate_event extends BroadcastReceiver {
     SharedPreferences.Editor quick_editor;
 
 
-
-
+    SharedPreferences.Editor editor;
     public static final String MyPREFERENCES = "MyPrefs";
 
+
+    public static final String sync = "sync";
+    SharedPreferences.Editor sync_editor;
+    SharedPreferences sync_sharedpreferences;
+
+    String description=null;
 
     @SuppressWarnings("deprecation")
     public void onReceive(final Context context, Intent intent)
     {
+
 
 
         //database for event details opened
@@ -68,7 +78,7 @@ public class Activate_event extends BroadcastReceiver {
         SharedPreferences sharedpreferences;
         //shared preferences editor declared
         sharedpreferences = context.getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor;
+
         //initializing shared preferences
         editor = sharedpreferences.edit();
 
@@ -84,13 +94,12 @@ public class Activate_event extends BroadcastReceiver {
         {
 
             String rep_until=intent.getStringExtra("rep_until");
-            String rep = intent.getStringExtra("rep");//rep passed from settoggles class to this class
+            rep = intent.getStringExtra("rep");//rep passed from settoggles class to this class
 
 
 
             //we check if the event still exists in database......i.e. it hasn't been deleted from database
             c = db.getEventDetail(id);
-
             c.moveToFirst();
             //if event has been deleted then nothing happens(due to try catch) otherwise the following code is executed
 
@@ -101,6 +110,9 @@ public class Activate_event extends BroadcastReceiver {
 
             //if c=null => no event exist with same id in database or it has been deleted....so if statement is not executed
             if (c != null) {
+
+                if(c.getString(c.getColumnIndex("description"))!=null)
+                    description=c.getString(c.getColumnIndex("description"));
 
 
                 database_name = c.getString(c.getColumnIndex("event_name"));
@@ -365,9 +377,55 @@ public class Activate_event extends BroadcastReceiver {
                 }
 
 
-                calSet1 = Calendar.getInstance();//calSet1 contains the current date and time
-                calSet1.set(Calendar.SECOND, 0);
-                calSet1.set(Calendar.MILLISECOND, 0);
+                /*if(c.getInt(c.getColumnIndex("from_sync"))==1)
+                {
+                    sync_sharedpreferences = context1.getSharedPreferences(sync, Context.MODE_PRIVATE);
+                    sync_editor = sync_sharedpreferences.edit();
+                    String pending_start_date=sync_sharedpreferences.getString("pending_start_date","");
+                    String pending_start_time=sync_sharedpreferences.getString("pending_start_time","");
+                    int start_day=Integer.valueOf(pending_start_date.substring(0, 2));
+                    int start_month=Integer.valueOf(pending_start_date.substring(3,5))-1;
+                    int start_year=Integer.valueOf(pending_start_date.substring(6));
+                    int start_hour=Integer.valueOf(pending_start_time.substring(0,2));
+                    int start_min=Integer.valueOf(pending_start_time.substring(3));
+                    calSet1.set(Calendar.DAY_OF_MONTH,start_day);
+                    calSet1.set(Calendar.MONTH,start_month);
+                    calSet1.set(Calendar.YEAR,start_year);
+                    calSet1.set(Calendar.HOUR_OF_DAY,start_hour);
+                    calSet1.set(Calendar.MINUTE,start_min);
+                    calSet1.set(Calendar.SECOND,0);
+                    calSet1.set(Calendar.MILLISECOND,0);
+                }
+                else
+                {*/
+                    calSet1 = Calendar.getInstance();//calSet1 contains the current date and time
+                    calSet1.set(Calendar.SECOND, 0);
+                    calSet1.set(Calendar.MILLISECOND, 0);
+                //}
+
+
+
+                int interval = c.getInt(c.getColumnIndex("days_bw_start_n_end"));
+                if(interval>=1)
+                {
+                    Calendar next_cal=Calendar.getInstance();
+                    next_cal.add(Calendar.DAY_OF_MONTH,1);
+                    next_cal.set(Calendar.HOUR_OF_DAY, 0);
+                    next_cal.set(Calendar.MINUTE, 0);
+                    next_cal.set(Calendar.SECOND,0);
+                    next_cal.set(Calendar.MILLISECOND,0);
+                    Intent in=new Intent(context1,nextday_update.class);
+                    PendingIntent pending = PendingIntent.getBroadcast(context1,id , in, 0);//ret_id is key here
+                    //pending intent behaves differently for different keys.....though key doesn't plays any role
+
+                    editor.putString("nextday_update_end_date",c.getString(c.getColumnIndex("event_end_date")));
+                    editor.commit();
+                    editor.putString("nextday_update_end_time",c.getString(c.getColumnIndex("end_time")));
+                    editor.commit();
+                    AlarmManager alarmManager = (AlarmManager) context1.getSystemService(Context.ALARM_SERVICE);
+                    alarmManager.set(AlarmManager.RTC_WAKEUP, next_cal.getTimeInMillis(), pending);
+                }
+
 
                 String cur_dayofweek_for_cus_monthly_rep = intent.getStringExtra("cur_dayofweek_for_cus_monthly_rep");
 
@@ -772,11 +830,11 @@ public class Activate_event extends BroadcastReceiver {
                         db2.open();
                         Cursor cur = db2.getEventDetail(id);
                         cur.moveToFirst();
-                        db3.open();
+                        //db3.open();
 
 
 
-                        db3.update_Database(id, cur.getString(cur.getColumnIndex("event_name")),
+                        /*db3.update_Database(id, cur.getString(cur.getColumnIndex("event_name")),
                                 cur.getString(cur.getColumnIndex("description")),
                                 cur.getString(cur.getColumnIndex("event_start_date")),
                                 cur.getString(cur.getColumnIndex("event_end_date")),
@@ -787,7 +845,8 @@ public class Activate_event extends BroadcastReceiver {
                                 cur.getString(cur.getColumnIndex("mobile_data")), cur.getString(cur.getColumnIndex("repeat")),
                                 cur.getString(cur.getColumnIndex("repeat_until")),
                                 cur.getString(cur.getColumnIndex("cur_dayofweek_for_cus_monthly_rep")),
-                                cur.getInt(cur.getColumnIndex("days_bw_start_n_end")), next_date);
+                                cur.getInt(cur.getColumnIndex("days_bw_start_n_end")),
+                                next_date,cur.getInt(cur.getColumnIndex("from_sync")));*/
 
 
                         setAlarm(calSet1, rep, rep_until, cur_dayofweek_for_cus_monthly_rep);
@@ -811,7 +870,7 @@ public class Activate_event extends BroadcastReceiver {
 
         db.close();
         db2.close();
-        db3.close();
+        //db3.close();
 
     }
 
@@ -821,7 +880,46 @@ public class Activate_event extends BroadcastReceiver {
     @SuppressWarnings("deprecation")
     public void displayNotification1()
     {
-        Intent i = new Intent(context1, NotificationView.class);//moves control to notificationView class
+
+        Intent i=new Intent(context1,pending_notif_events.class);
+        editor.putInt("id",id);
+        editor.commit();
+
+        editor.putString("rep", rep);
+        editor.commit();
+        //i.putExtra("id",id);
+        PendingIntent pending_event=PendingIntent.getBroadcast(context1, 0, i, 0);
+
+        NotificationCompat.Builder mBuilder;
+        if(description==null)
+        {
+             mBuilder= new NotificationCompat.Builder(context1)
+                            .setSmallIcon(R.drawable.occasus1)
+                            .setContentTitle("Occasus")
+                            .setContentText("Event "+database_name+" starts")
+                                    // if(description!=null)
+                            //.setSubText(description)
+                            .addAction(R.drawable.stop, "Cancel", pending_event);
+        }
+        else
+        {
+            mBuilder = new NotificationCompat.Builder(context1)
+                            .setSmallIcon(R.drawable.occasus1)
+                            .setContentTitle("Occasus")
+                            .setContentText("Event "+database_name+" starts")
+                                    // if(description!=null)
+                            .setSubText(description)
+                            .addAction(R.drawable.stop, "Cancel", pending_event);
+        }
+
+
+        int mNotificationId = 2;
+        NotificationManager mNotifyMgr =
+                (NotificationManager) context1.getSystemService(context1.NOTIFICATION_SERVICE);
+        mNotifyMgr.notify(mNotificationId, mBuilder.build());
+
+
+       /* Intent i = new Intent(context1, NotificationView.class);//moves control to notificationView class
         i.putExtra("notificationID",notificationID);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(context1,0,i,0);
@@ -836,7 +934,7 @@ public class Activate_event extends BroadcastReceiver {
         CharSequence message ="Event " +database_name+" starts";//message appearing at notification
 
         notif.setLatestEventInfo(context1,from,message,pendingIntent);
-        nm.notify(notificationID,notif);
+        nm.notify(notificationID,notif);*/
     }
 
 
@@ -846,8 +944,6 @@ public class Activate_event extends BroadcastReceiver {
     private void setAlarm(Calendar targetCal,String rep,String rep_until,String cur_dayofweek_for_cus_monthly_rep)
     {
         Intent intent = new Intent(context1, Activate_event.class);
-
-
         intent.putExtra("id",id);
 
         //name sent to activate_event class....there it is used to retrieve all the details of the event

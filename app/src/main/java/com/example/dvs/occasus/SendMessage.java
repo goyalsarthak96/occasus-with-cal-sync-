@@ -53,7 +53,7 @@ public class SendMessage extends ActionBarActivity {
     //context for the class is created
     Context context = SendMessage.this;
 
-    String id_2;
+    String id_2 = "na";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,11 +99,16 @@ public class SendMessage extends ActionBarActivity {
         delete_contact.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                DBAdapterSms db = new DBAdapterSms(SendMessage.this);
+                if(id_2.equals("na")) {
+                    Toast.makeText(getBaseContext(),"Please select a contact",Toast.LENGTH_SHORT).show();
+                }
+                else{
+                    DBAdapterSms db = new DBAdapterSms(SendMessage.this);
 
-                db.deleteContact(id_2);
-                Intent intent = new Intent(SendMessage.this,SendMessage.class);
-                startActivity(intent);
+                    db.deleteContact(id_2);
+                    Intent intent = new Intent(SendMessage.this,SendMessage.class);
+                    startActivity(intent);
+                }
             }
         });
 
@@ -287,7 +292,10 @@ public class SendMessage extends ActionBarActivity {
                             db.open();
                             //db.insertContact(name, id, Number);
                             for(int i = 0; i < ans; i++) {
-                                db.insertContact(name, id + "a" + i, items[i].toString());
+                                String selectedNumber = items[i].toString();
+                                selectedNumber = selectedNumber.replace("-", "");
+                                selectedNumber = selectedNumber.replace(" ", "");
+                                db.insertContact(name, id + "a" + i, selectedNumber);
                             }
                             db.close();
 

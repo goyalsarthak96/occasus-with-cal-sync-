@@ -64,6 +64,7 @@ public class SetToggles extends ActionBarActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_set_toggles);
 
+
         //to add logo to action bar
         ActionBar ac=getSupportActionBar();
         ac.setDisplayShowHomeEnabled(true);
@@ -221,7 +222,7 @@ public class SetToggles extends ActionBarActivity
             switch (id) {
                 case 0:
                     return new AlertDialog.Builder(this)
-                            .setIcon(R.drawable.ic_launcher)
+                            .setIcon(R.drawable.ring_dialog)
                             .setTitle("Choose a profile")
 
                             .setAdapter(ringadapter,new DialogInterface.OnClickListener(){
@@ -353,7 +354,7 @@ public class SetToggles extends ActionBarActivity
             db.deleteEvent(id_to_be_edited);//delete the older version
             db.open();
             db.insertevent(name, desc, start_date, end_date, stime, etime, unique_datetime_key,
-                    bluetooth, wifi1, profile, mobile_data, rep,rep_until,cur_dayofweek_for_cus_monthly_rep,interval,start_date);
+                    bluetooth, wifi1, profile, mobile_data, rep,rep_until,cur_dayofweek_for_cus_monthly_rep,interval,start_date,0);
            //inserts the new version
            Toast.makeText(getBaseContext(), "event successfully edited", Toast.LENGTH_SHORT).show();
 
@@ -364,7 +365,8 @@ public class SetToggles extends ActionBarActivity
             try
             {
                 db.insertevent(name, desc, start_date, end_date, stime, etime, unique_datetime_key,
-                        bluetooth, wifi1, profile, mobile_data, rep, rep_until,cur_dayofweek_for_cus_monthly_rep,interval,start_date);
+                        bluetooth, wifi1, profile, mobile_data, rep, rep_until,cur_dayofweek_for_cus_monthly_rep,interval,
+                        start_date,0);
                 Toast.makeText(getBaseContext(), "event successfully created", Toast.LENGTH_SHORT).show();
 
             }
@@ -508,9 +510,7 @@ public class SetToggles extends ActionBarActivity
                 targetCal.set(Calendar.YEAR,date.get(Calendar.YEAR));
 
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
+
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
                 AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
@@ -537,9 +537,6 @@ public class SetToggles extends ActionBarActivity
                 targetCal.set(Calendar.MONTH,date.get(Calendar.MONTH));
                 targetCal.set(Calendar.YEAR,date.get(Calendar.YEAR));
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
 
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
@@ -569,9 +566,7 @@ public class SetToggles extends ActionBarActivity
                 targetCal.set(Calendar.MONTH,date.get(Calendar.MONTH));
                 targetCal.set(Calendar.YEAR,date.get(Calendar.YEAR));
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
+
 
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
@@ -600,9 +595,6 @@ public class SetToggles extends ActionBarActivity
                 targetCal.set(Calendar.MONTH,date.get(Calendar.MONTH));
                 targetCal.set(Calendar.YEAR,date.get(Calendar.YEAR));
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
 
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
@@ -629,9 +621,8 @@ public class SetToggles extends ActionBarActivity
                 targetCal.set(Calendar.MONTH,date.get(Calendar.MONTH));
                 targetCal.set(Calendar.YEAR,date.get(Calendar.YEAR));
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
+
+
 
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
@@ -653,9 +644,7 @@ public class SetToggles extends ActionBarActivity
                 targetCal.set(Calendar.MONTH,date.get(Calendar.MONTH));
                 targetCal.set(Calendar.YEAR,date.get(Calendar.YEAR));
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
+
 
 
 
@@ -683,9 +672,7 @@ public class SetToggles extends ActionBarActivity
                 targetCal.set(Calendar.MONTH,date.get(Calendar.MONTH));
                 targetCal.set(Calendar.YEAR,date.get(Calendar.YEAR));
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
+
 
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
@@ -724,6 +711,7 @@ public class SetToggles extends ActionBarActivity
         }
         intent.putExtra("id",id);
 
+
         //if new event is repeated
         intent.putExtra("rep",rep);
         intent.putExtra("rep_until",rep_until);
@@ -737,11 +725,7 @@ public class SetToggles extends ActionBarActivity
 
                 targetCal.add(Calendar.DAY_OF_MONTH, added_in_mon_date_in_pending_function);
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.HOUR_OF_DAY)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MINUTE)),Toast.LENGTH_SHORT).show();
+
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(),id , intent, 0);
                 AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
@@ -758,12 +742,7 @@ public class SetToggles extends ActionBarActivity
                 targetCal.add(Calendar.DAY_OF_MONTH,added_in_tue_date_in_pending_function);
 
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.HOUR_OF_DAY)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MINUTE)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.SECOND)),Toast.LENGTH_SHORT).show();
+
 
 
 
@@ -782,11 +761,6 @@ public class SetToggles extends ActionBarActivity
                 targetCal.add(Calendar.DAY_OF_MONTH,added_in_wed_date_in_pending_function);
 
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.HOUR_OF_DAY)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MINUTE)),Toast.LENGTH_SHORT).show();
 
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
@@ -807,11 +781,6 @@ public class SetToggles extends ActionBarActivity
 
 
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.HOUR_OF_DAY)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MINUTE)),Toast.LENGTH_SHORT).show();
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
                 AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
@@ -830,12 +799,6 @@ public class SetToggles extends ActionBarActivity
                 targetCal.add(Calendar.DAY_OF_MONTH,added_in_fri_date_in_pending_function);
 
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.HOUR_OF_DAY)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MINUTE)),Toast.LENGTH_SHORT).show();
-
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
                 AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
@@ -853,11 +816,7 @@ public class SetToggles extends ActionBarActivity
                 targetCal.add(Calendar.DAY_OF_MONTH,added_in_sat_date_in_pending_function);
 
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.HOUR_OF_DAY)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MINUTE)),Toast.LENGTH_SHORT).show();
+
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
                 AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
@@ -875,11 +834,7 @@ public class SetToggles extends ActionBarActivity
                 targetCal.add(Calendar.DAY_OF_MONTH,added_in_sun_date_in_pending_function);
 
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.HOUR_OF_DAY)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MINUTE)),Toast.LENGTH_SHORT).show();
+
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
                 AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);

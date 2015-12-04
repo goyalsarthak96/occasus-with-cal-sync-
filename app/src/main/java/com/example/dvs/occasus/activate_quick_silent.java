@@ -13,6 +13,7 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
 import android.net.wifi.WifiManager;
+import android.support.v4.app.NotificationCompat;
 
 import java.lang.reflect.Method;
 
@@ -32,6 +33,9 @@ public class activate_quick_silent extends BroadcastReceiver{
     SharedPreferences.Editor editor;
 
     Context context1;
+
+
+
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -188,7 +192,32 @@ public class activate_quick_silent extends BroadcastReceiver{
     @SuppressWarnings("deprecation")
     public void displayNotification()
     {
-        Intent i = new Intent(context1, NotificationView.class);//moves control to notificationView class
+        String output;
+        if(quick_sharedpreferences.getInt("options_selected",0)==1)
+        {
+            output="Silent for "+quick_sharedpreferences.getString("hour","")+" hours "+ quick_sharedpreferences.getString("min","")+" min";
+        }
+        else
+        {
+            output="Silent till "+quick_sharedpreferences.getString("time","");
+        }
+
+        Intent i=new Intent(context1,pending_notif_quick.class);
+        PendingIntent pending_quick_sil=PendingIntent.getBroadcast(context1, 0, i, 0);
+        NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(context1)
+                        .setSmallIcon(R.drawable.occasus1)
+                        .setContentTitle("Occasus")
+                        .setContentText(output)
+                        .addAction(R.drawable.stop,"Cancel",pending_quick_sil);
+
+        int mNotificationId = 1;
+        NotificationManager mNotifyMgr =
+                (NotificationManager) context1.getSystemService(context1.NOTIFICATION_SERVICE);
+        mNotifyMgr.notify(mNotificationId, mBuilder.build());
+
+
+        /*Intent i = new Intent(context1, NotificationView.class);//moves control to notificationView class
         i.putExtra("notificationID",1);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(context1,0,i,0);
@@ -213,6 +242,6 @@ public class activate_quick_silent extends BroadcastReceiver{
 
 
         notif.setLatestEventInfo(context1, from, output, pendingIntent);
-        nm.notify(1, notif);
+        nm.notify(1, notif);*/
     }
 }

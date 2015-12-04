@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.telephony.TelephonyManager;
+import android.widget.ListView;
 import android.widget.Toast;
 import android.content.Context;
 import android.content.BroadcastReceiver;
@@ -88,6 +89,7 @@ public class CallListener extends BroadcastReceiver {
 
                 //Getting all contacts through cursor
                 Cursor c = db.getAllContacts();
+
                 if (c.moveToFirst())
                 {
                     do

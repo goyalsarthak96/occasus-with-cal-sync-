@@ -7,7 +7,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.os.Handler;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -21,7 +20,6 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -32,10 +30,8 @@ public class CreateEvent extends ActionBarActivity {
 
     int shour, sminute,ehour,eminute;
     int start_yr, start_month, start_day,end_yr,end_month,end_day;
-    int start_time_set=0;
-    int end_time_set=0;
-    int start_date_set=0;
-    int end_date_set=0;
+
+
     int flag;
     int id_to_be_edited;
     CharSequence [] repeat_options1={"   Does not Repeat","   Every Day","   Every Week","   Every Month","   Every Year","   Custom..."};
@@ -86,17 +82,26 @@ public class CreateEvent extends ActionBarActivity {
         ac.setDisplayShowHomeEnabled(true);
         ac.setLogo(R.drawable.occasus1);
         ac.setDisplayUseLogoEnabled(true);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(false);//to hide back button on action bar
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);//to hide back button on action bar
 
 
 
         Calendar today = Calendar.getInstance();//today contains current date and time when event is being created
         start_yr = today.get(Calendar.YEAR);  //yr initialized
-        end_yr = today.get(Calendar.YEAR);
         start_month = today.get(Calendar.MONTH);  //month initialized
-        end_month = today.get(Calendar.MONTH);
         start_day = today.get(Calendar.DAY_OF_MONTH);  //date initialized
-        end_day = today.get(Calendar.DAY_OF_MONTH);
+        shour=today.get(Calendar.HOUR_OF_DAY);
+        sminute=today.get(Calendar.MINUTE);
+
+        Calendar hour_later=Calendar.getInstance();
+        hour_later.add(Calendar.HOUR_OF_DAY,1);
+        end_yr = hour_later.get(Calendar.YEAR);
+        end_month = hour_later.get(Calendar.MONTH);
+        end_day = hour_later.get(Calendar.DAY_OF_MONTH);
+        ehour=hour_later.get(Calendar.HOUR_OF_DAY);
+        eminute=hour_later.get(Calendar.MINUTE);
+
+
 
 
 
@@ -130,14 +135,31 @@ public class CreateEvent extends ActionBarActivity {
 
             if (flag == 0)//if new event is being created
             {
-                start_time_set = 0;
-                end_time_set = 0;//end_time_set=0 => user hasn't entered any time....used in checking if  etime>stime
-                start_date_set = 0;
-                end_date_set = 0;
+                //start_time_set = 0;
+                //end_time_set = 0;//end_time_set=0 => user hasn't entered any time....used in checking if  etime>stime
+                //start_date_set = 0;
+                //end_date_set = 0;
                 repeat_until="0";
                 final_repeat="0";
                 cur_dayofweek_for_cus_monthly_rep="";
                 editText_repeat.setText("Does not Repeat");
+
+
+
+                SimpleDateFormat sdf1 = new SimpleDateFormat("dd/MM/yyyy");
+                java.util.Date d1 = new java.util.Date(start_yr - 1900, start_month, start_day, 0, 0);
+                eve_start_date=sdf1.format(d1);
+                editText_start_date.setText(eve_start_date);
+                java.util.Date d2 = new java.util.Date(end_yr - 1900, end_month, end_day, 0, 0);
+                eve_end_date=sdf1.format(d2);
+                editText_end_date.setText(eve_end_date);
+                SimpleDateFormat sdf2 = new SimpleDateFormat("HH:mm");
+                java.util.Date d3 = new java.util.Date(0, 0, 0, shour, sminute);
+                start_strtime=sdf2.format(d3);
+                editText_stime.setText(start_strtime);
+                java.util.Date d4 = new java.util.Date(0, 0, 0, ehour, eminute);
+                end_strtime=sdf2.format(d4);
+                editText_etime.setText(end_strtime);
             }
 
 
@@ -146,10 +168,10 @@ public class CreateEvent extends ActionBarActivity {
                 TextView textView = (TextView) findViewById(R.id.textView2);// textview -> reference object to title
                 textView.setText("Edit Event");//title set to "edit event"
 
-                start_time_set = 1;
-                end_time_set = 1;//user entered some end time(when event was created)
-                start_date_set = 1;
-                end_date_set = 1;
+                //start_time_set = 1;
+                //end_time_set = 1;//user entered some end time(when event was created)
+                //start_date_set = 1;
+                //end_date_set = 1;
 
                 id_to_be_edited = intent.getIntExtra("clicked_id",0);
                 //clicked_id is id of the profile to be edited
@@ -367,10 +389,10 @@ public class CreateEvent extends ActionBarActivity {
             eve_end_date=custom_sharedpreferences.getString("end_date", null);
             start_strtime=custom_sharedpreferences.getString("start_time", null);
             end_strtime=custom_sharedpreferences.getString("end_time", null);
-            start_date_set=custom_sharedpreferences.getInt("start_date_set", 0);
-            end_date_set=custom_sharedpreferences.getInt("end_date_set", 0);
-            start_time_set=custom_sharedpreferences.getInt("start_time_set", 0);
-            end_time_set=custom_sharedpreferences.getInt("end_time_set", 0);
+            //start_date_set=custom_sharedpreferences.getInt("start_date_set", 0);
+            //end_date_set=custom_sharedpreferences.getInt("end_date_set", 0);
+            //start_time_set=custom_sharedpreferences.getInt("start_time_set", 0);
+            //end_time_set=custom_sharedpreferences.getInt("end_time_set", 0);
             id_to_be_edited=custom_sharedpreferences.getInt("id_to_be_edited", 0);
             final_repeat=custom_sharedpreferences.getString("custom_repeat",null);
             repeat_until=custom_sharedpreferences.getString("repeat_until",null);
@@ -625,80 +647,55 @@ public class CreateEvent extends ActionBarActivity {
         }
         else
         {
-            if(start_date_set==0)//if date hasn't been entered.....eve_date was initaialized to "yo"
+
+            Calendar calNow = Calendar.getInstance();
+            Calendar calSet = (Calendar) calNow.clone();//calset contains the calender instance of the time when event should start
+            calSet.set(Calendar.YEAR, start_yr);
+            calSet.set(Calendar.MONTH, start_month);
+            calSet.set(Calendar.DAY_OF_MONTH, start_day);
+            calSet.set(Calendar.HOUR_OF_DAY, shour);
+            calSet.set(Calendar.MINUTE, sminute);
+            calSet.set(Calendar.SECOND, 0);
+            calSet.set(Calendar.MILLISECOND, 0);
+
+             //if the event start time has not yet passed
+             SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+            Date cur_date=new Date(calNow.get(Calendar.YEAR)-1900,calNow.get(Calendar.MONTH),calNow.get(Calendar.DAY_OF_MONTH));
+            String cur_date1=dateFormat.format(cur_date);
+
+
+            SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+            Date cur_time = new Date(0,0,0, calNow.get(Calendar.HOUR_OF_DAY),calNow.get(Calendar.MINUTE));
+            //start_time contains start time in string format
+            String cur_time1 = timeFormat.format(cur_time);
+
+            if(date_identifier1(eve_start_date, cur_date1)==2)
             {
-                Toast.makeText(getBaseContext(),"Please enter the start date",Toast.LENGTH_SHORT).show();
-            }
-            else
-            {
-                if(end_date_set==0)
+                int check=checkoverlap();
+                if(check==0)
                 {
-                    Toast.makeText(getBaseContext(),"Please enter the end date",Toast.LENGTH_SHORT).show();
+                    startActivity(intent);
+                }
+            }
+            else if(date_identifier1(eve_start_date,cur_date1)==3)
+            {
+                if(time_identifier1(start_strtime,cur_time1)!=1)
+                {
+                    int check=checkoverlap();
+                    if(check==0)
+                    {
+                        startActivity(intent);
+                    }
                 }
                 else
                 {
-                    if (start_time_set == 0)//if stime hasn't been entered
-                    {
-                        Toast.makeText(getBaseContext(), "Please enter the starting time", Toast.LENGTH_SHORT).show();
-                    }
-                    else
-                    {
-                        if (end_time_set == 0)//if end time wasn't entered by user
-                        {
-                            Toast.makeText(getBaseContext(), "Please enter the ending time", Toast.LENGTH_SHORT).show();
-                        }
-                        else//check if start time has already passed
-                        {
-                            Calendar calNow = Calendar.getInstance();
-                            Calendar calSet = (Calendar) calNow.clone();//calset contains the calender instance of the time when event should start
-                            calSet.set(Calendar.YEAR, start_yr);
-                            calSet.set(Calendar.MONTH, start_month);
-                            calSet.set(Calendar.DAY_OF_MONTH, start_day);
-                            calSet.set(Calendar.HOUR_OF_DAY, shour);
-                            calSet.set(Calendar.MINUTE, sminute);
-                            calSet.set(Calendar.SECOND, 0);
-                            calSet.set(Calendar.MILLISECOND, 0);
-
-
-                            //if the event start time has not yet passed
-
-                            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-                            Date cur_date=new Date(calNow.get(Calendar.YEAR)-1900,calNow.get(Calendar.MONTH),calNow.get(Calendar.DAY_OF_MONTH));
-                            String cur_date1=dateFormat.format(cur_date);
-
-
-                            SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
-                            Date cur_time = new Date(0,0,0, calNow.get(Calendar.HOUR_OF_DAY),calNow.get(Calendar.MINUTE));
-                            //start_time contains start time in string format
-                            String cur_time1 = timeFormat.format(cur_time);
-
-                            if(date_identifier1(eve_start_date, cur_date1)==2)
-                            {
-                                int check=checkoverlap();
-                                if(check==0)
-                                {
-                                    startActivity(intent);
-                                }
-                            }
-                            else if(date_identifier1(eve_start_date,cur_date1)==3)
-                            {
-                                if(time_identifier1(start_strtime,cur_time1)!=1)
-                                {
-                                    int check=checkoverlap();
-                                    if(check==0)
-                                    {
-                                        startActivity(intent);
-                                    }
-                                }
-                                else
-                                {
-                                    Toast.makeText(getBaseContext(), "Starting time has already passed", Toast.LENGTH_SHORT).show();
-                                }
-                            }
-                            else
-                            {
-                                Toast.makeText(getBaseContext(), "Starting time has already passed", Toast.LENGTH_SHORT).show();
-                            }
+                    Toast.makeText(getBaseContext(), "Starting time has already passed", Toast.LENGTH_SHORT).show();
+                }
+            }
+            else
+            {
+                Toast.makeText(getBaseContext(), "Starting time has already passed", Toast.LENGTH_SHORT).show();
+            }
 
 
 
@@ -768,10 +765,10 @@ public class CreateEvent extends ActionBarActivity {
                             }
                             else
                                 Toast.makeText(getBaseContext(), "Starting time has already passed", Toast.LENGTH_SHORT).show();*/
-                        }
-                    }
-                }
-            }
+
+
+
+
         }
     }
 
@@ -1048,48 +1045,30 @@ public class CreateEvent extends ActionBarActivity {
                         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
                         Date date = new Date(start_yr-1900,start_month,start_day,0,0);
                         eve_start_date = dateFormat.format(date);
-                        if(end_date_set==1)
-                        {
-                            int date_check=date_identifier1(eve_start_date,eve_end_date);
-                            if(date_check==3)
-                            {
-                                if((start_time_set==1)&&(end_time_set==1))
-                                {
-                                    int time_check=time_identifier1(start_strtime,end_strtime);
-                                    if((time_check==1)||(time_check==3))
-                                    {
-                                        start_date_set = 1;
-                                        editText_start_date.setText(eve_start_date);
-                                    }
-                                    else
-                                    {
-                                        Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
-                                        Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
 
-                                    }
-                                }
-                                else
-                                {
-                                    start_date_set = 1;
-                                    editText_start_date.setText(eve_start_date);
-                                }
-                            }
-                            else if(date_check==1)
+                        int date_check=date_identifier1(eve_start_date,eve_end_date);
+                        if(date_check==3)
+                        {
+                            int time_check=time_identifier1(start_strtime,end_strtime);
+                            if((time_check==1)||(time_check==3))
                             {
-                                start_date_set = 1;
                                 editText_start_date.setText(eve_start_date);
                             }
                             else
                             {
-                                Toast.makeText(getApplicationContext(), "Start date should be smaller or equal to end date", Toast.LENGTH_SHORT).show();
-                                Toast.makeText(getApplicationContext(), "Start date should be smaller or equal to end date", Toast.LENGTH_SHORT).show();
-
-                            }
+                                Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
+                             }
+                        }
+                        else if(date_check==1)
+                        {
+                            editText_start_date.setText(eve_start_date);
                         }
                         else
                         {
-                            start_date_set = 1;
-                            editText_start_date.setText(eve_start_date);
+                            Toast.makeText(getApplicationContext(), "Start date should be smaller or equal to end date", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getApplicationContext(), "Start date should be smaller or equal to end date", Toast.LENGTH_SHORT).show();
+
                         }
 
 
@@ -1119,48 +1098,32 @@ public class CreateEvent extends ActionBarActivity {
 
                     eve_end_date = dateFormat.format(date);
 
-                    if(start_date_set==1)
-                    {
-                        int date_check=date_identifier1(eve_start_date,eve_end_date);
-                        if(date_check==3)
-                        {
-                            if((start_time_set==1)&&(end_time_set==1))
-                            {
-                                int time_check=time_identifier1(start_strtime,end_strtime);
-                                if((time_check==1)||(time_check==3))
-                                {
-                                    end_date_set = 1;
-                                    editText_end_date.setText(eve_end_date);
-                                }
-                                else
-                                {
-                                    Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
-                                    Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
-                                }
 
-                            }
-                            else
-                            {
-                                end_date_set = 1;
-                                editText_end_date.setText(eve_end_date);
-                            }
-                        }
-                        else if(date_check==1)
+                    int date_check=date_identifier1(eve_start_date,eve_end_date);
+                    if(date_check==3)
+                    {
+                        int time_check=time_identifier1(start_strtime,end_strtime);
+                        if((time_check==1)||(time_check==3))
                         {
-                            end_date_set = 1;
                             editText_end_date.setText(eve_end_date);
                         }
                         else
                         {
-                            Toast.makeText(getApplicationContext(), "Start date should be smaller or equal to end date", Toast.LENGTH_SHORT).show();
-                            Toast.makeText(getApplicationContext(), "Start date should be smaller or equal to end date", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
                         }
+
+                    }
+                    else if(date_check==1)
+                    {
+                        editText_end_date.setText(eve_end_date);
                     }
                     else
                     {
-                        end_date_set = 1;
-                        editText_end_date.setText(eve_end_date);
+                        Toast.makeText(getApplicationContext(), "Start date should be smaller or equal to end date", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getApplicationContext(), "Start date should be smaller or equal to end date", Toast.LENGTH_SHORT).show();
                     }
+
 
 
                 }
@@ -1189,14 +1152,10 @@ public class CreateEvent extends ActionBarActivity {
                                         custom_editor.commit();
                                         custom_editor.putString("end_time", editText_etime.getText().toString());
                                         custom_editor.commit();
-                                        custom_editor.putInt("start_date_set", start_date_set);
-                                        custom_editor.commit();
-                                        custom_editor.putInt("end_date_set", end_date_set);
-                                        custom_editor.commit();
-                                        custom_editor.putInt("start_time_set", start_time_set);
-                                        custom_editor.commit();
-                                        custom_editor.putInt("end_time_set", end_time_set);
-                                        custom_editor.commit();
+                                        //custom_editor.putInt("start_time_set", start_time_set);
+                                        //custom_editor.commit();
+                                        //custom_editor.putInt("end_time_set", end_time_set);
+                                        //custom_editor.commit();
                                         custom_editor.putInt("flag", flag);
                                         custom_editor.commit();
                                         custom_editor.putInt("id_to_be_edited", id_to_be_edited);
@@ -1262,30 +1221,21 @@ public class CreateEvent extends ActionBarActivity {
                     Date date = new Date(0,0,0, shour, sminute);
                     //start_time contains start time in string format
                      start_strtime = timeFormat.format(date);
-                    if((eve_start_date.equals(eve_end_date))&&(end_date_set==1)&&(start_date_set==1))
+                    if(eve_start_date.equals(eve_end_date))
                     {
-                        if(end_time_set==1)
+                        int time_check=time_identifier1(start_strtime,end_strtime);
+                        if((time_check==1)||(time_check==3))
                         {
-                            int time_check=time_identifier1(start_strtime,end_strtime);
-                            if((time_check==1)||(time_check==3))
-                            {
-                                start_time_set=1;
-                                editText_stime.setText(start_strtime);
-                            }
-                            else
-                            {
-                                Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
-                                Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
-                            }
+                            editText_stime.setText(start_strtime);
                         }
                         else
                         {
-                            start_time_set=1;
-                            editText_stime.setText(start_strtime);
+                            Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
                         }
                     }
-                    else {
-                        start_time_set=1;
+                    else
+                    {
                         editText_stime.setText(start_strtime);
                     }
 
@@ -1308,31 +1258,21 @@ public class CreateEvent extends ActionBarActivity {
                     Date date = new Date(0,0,0, ehour, eminute);
                     end_strtime = timeFormat.format(date);
 
-                    if((eve_start_date.equals(eve_end_date))&&(end_date_set==1)&&(start_date_set==1))
+                    if(eve_start_date.equals(eve_end_date))
                     {
-                        if(start_time_set==1)
+                        int time_check=time_identifier1(start_strtime,end_strtime);
+                        if((time_check==1)||(time_check==3))
                         {
-                            int time_check=time_identifier1(start_strtime,end_strtime);
-                            if((time_check==1)||(time_check==3))
-                            {
-                                end_time_set=1;
-                                editText_etime.setText(end_strtime);
-                            }
-                            else
-                            {
-                                Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
-                                Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
-                            }
+                            editText_etime.setText(end_strtime);
                         }
                         else
                         {
-                            end_time_set=1;
-                            editText_etime.setText(end_strtime);
+                            Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getApplicationContext(), "Start time should be smaller or equal to end time", Toast.LENGTH_SHORT).show();
                         }
                     }
                     else
                     {
-                        end_time_set=1;
                         editText_etime.setText(end_strtime);
                     }
                 }

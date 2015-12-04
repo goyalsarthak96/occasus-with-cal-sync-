@@ -1,8 +1,11 @@
 package com.example.dvs.occasus;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.view.*;
 
 
 import android.widget.TextView;
@@ -21,7 +24,7 @@ public class help extends ActionBarActivity {
         ac.setDisplayShowHomeEnabled(true);
         ac.setLogo(R.drawable.occasus1);
         ac.setDisplayUseLogoEnabled(true);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         TextView t;
         String s1;
 
@@ -72,5 +75,22 @@ public class help extends ActionBarActivity {
 
     }
 
+
+    public void mail(View v)
+    {
+        String to[]={"occasuscontact@gmail.com"};
+        composeEmail(to,"");
+    }
+
+
+    public void composeEmail(String[] addresses, String subject) {
+        Intent intent = new Intent(Intent.ACTION_SENDTO);
+        intent.setData(Uri.parse("mailto:")); // only email apps should handle this
+        intent.putExtra(Intent.EXTRA_EMAIL, addresses);
+        intent.putExtra(Intent.EXTRA_SUBJECT, subject);
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            startActivity(intent);
+        }
+    }
 
 }

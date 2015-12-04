@@ -32,7 +32,8 @@ public class DBAdapter{
                     "event_start_date text not null, event_end_date text not null,start_time text not null, end_time text not null," +
                     "event_start_date_time text not null,bluetooth text not null,wifi text not null,profile text not null, " +
                     "mobile_data text not null,repeat text not null,repeat_until text not null," +
-                    "cur_dayofweek_for_cus_monthly_rep text,days_bw_start_n_end integer not null,next_date text not null);";
+                    "cur_dayofweek_for_cus_monthly_rep text,days_bw_start_n_end integer not null,next_date text not null," +
+                    "from_sync integer not null);";
 
 
 
@@ -85,7 +86,7 @@ public class DBAdapter{
     public long insertevent(String name,String desc, String start_date, String end_date,String stime, String etime,
                             String start_date_time, String bluetooth2,String wifi2, String profile,String mobile_data,
                             String repeat,String repeat_until,String cur_dayofweek_for_cus_monthly_rep,
-                            int days_bw_start_n_end,String next_date)
+                            int days_bw_start_n_end,String next_date,int from_sync)
     {
 
         ContentValues initialValues = new ContentValues();
@@ -105,6 +106,7 @@ public class DBAdapter{
         initialValues.put("cur_dayofweek_for_cus_monthly_rep",cur_dayofweek_for_cus_monthly_rep);
         initialValues.put("days_bw_start_n_end",days_bw_start_n_end);
         initialValues.put("next_date",next_date);
+        initialValues.put("from_sync",from_sync);
 
         return db.insert(DATABASE_TABLE, null, initialValues);
 
@@ -152,7 +154,7 @@ public class DBAdapter{
     public int update_Database(int id,String name,String desc, String start_date, String end_date,String stime, String etime,
                                 String start_date_time, String bluetooth2,String wifi2, String profile,String mobile_data,
                                 String repeat,String repeat_until,String cur_dayofweek_for_cus_monthly_rep,
-                                int days_bw_start_n_end,String next_date)
+                                int days_bw_start_n_end,String next_date,int from_sync)
     {
 
 
@@ -173,6 +175,7 @@ public class DBAdapter{
         updatedValues.put("cur_dayofweek_for_cus_monthly_rep",cur_dayofweek_for_cus_monthly_rep);
         updatedValues.put("days_bw_start_n_end", days_bw_start_n_end);
         updatedValues.put("next_date", next_date);
+        updatedValues.put("from_sync",from_sync);
 
 
         return db.update(DATABASE_TABLE,updatedValues,value + "= ?",new String[] {Integer.toString(id) });

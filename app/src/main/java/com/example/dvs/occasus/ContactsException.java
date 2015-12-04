@@ -40,7 +40,7 @@ public class ContactsException extends ActionBarActivity {
 
     private static int i;
 
-    String id_1;
+    String id_1 = "na";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,8 +66,16 @@ public class ContactsException extends ActionBarActivity {
         add_contact.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
-                startActivityForResult(intent, PICK_CONTACT);
+                /*DBAdapterException db = new DBAdapterException(ContactsException.this);
+
+                int numCount = db.getNumberOfContacts();
+                if(numCount < 4) {*/
+                    Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
+                    startActivityForResult(intent, PICK_CONTACT);
+                /*}
+                else{
+                    Toast.makeText(getBaseContext(),"For adding more contacts, get pro version.",Toast.LENGTH_SHORT).show();
+                }*/
             }
         });
 
@@ -75,11 +83,16 @@ public class ContactsException extends ActionBarActivity {
         delete_contact.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                DBAdapterException db = new DBAdapterException(ContactsException.this);
+                if(id_1.equals("na")) {
+                    Toast.makeText(getBaseContext(),"Please select a contact",Toast.LENGTH_SHORT).show();
+                }
+                else{
+                    DBAdapterException db = new DBAdapterException(ContactsException.this);
 
-                db.deleteContact(id_1);
-                Intent intent = new Intent(ContactsException.this,ContactsException.class);
-                startActivity(intent);
+                    db.deleteContact(id_1);
+                    Intent intent = new Intent(ContactsException.this, ContactsException.class);
+                    startActivity(intent);
+                }
             }
         });
 
@@ -265,7 +278,10 @@ public class ContactsException extends ActionBarActivity {
 
                             db.open();
                             for(int i = 0; i < ans; i++) {
-                                db.insertContact(name, id + "a" + i, items[i].toString());
+                                String selectedNumber = items[i].toString();
+                                selectedNumber = selectedNumber.replace("-", "");
+                                selectedNumber = selectedNumber.replace(" ", "");
+                                db.insertContact(name, id + "a" + i, selectedNumber);
                             }
                             db.close();
 

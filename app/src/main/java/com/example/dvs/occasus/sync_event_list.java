@@ -5,15 +5,21 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.PendingIntent;
 import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.CalendarContract;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -59,13 +65,23 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
 
     };
 
+
+
+    public static final String[] INSTANCE_PROJECTION = new String[] {
+            CalendarContract.Instances.EVENT_ID,      // 0
+            CalendarContract.Instances.BEGIN,         // 1
+            CalendarContract.Instances.END
+
+    };
+
+
     int no_of_events_not_synced,total_no_of_events;
     String[][] global_event_list=new String[2][1000];
     String [][] copy_eve_list=new String[2][1000];
-    TextView not_found1,not_found2,all_sync,event_list_text;
+    TextView not_found1,not_found2,all_sync;
     ImageView not_found_image,all_sync_image;
 
-    CharSequence[] dialog_options={"Default Profile","Create New Profile"};
+    String[] dialog_options={"Default Profile","Create New Profile"};
     String[] items={ "Silent", "Ring", "Vibrate"};
 
     Button set_profile,select_all,go_to_main;
@@ -79,14 +95,23 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
     Cursor cur2;
 
 
+    String first_pending_start_date,first_pending_start_time,first_pending_end_date,first_pending_end_time;
+
+
     int id;
     int start_day,start_month,start_year;
     int added_in_mon_date_in_pending_function,added_in_tue_date_in_pending_function,added_in_wed_date_in_pending_function;
     int added_in_thu_date_in_pending_function,added_in_fri_date_in_pending_function,added_in_sat_date_in_pending_function;
     int added_in_sun_date_in_pending_function;
 
+    String calendar_name;
+
     public static final String MyPREFERENCES = "MyPrefs";
 
+    int create_pending_intent;
+
+
+    ListAdapter adap;
 
     @Override
     public void show_dialog() {
@@ -104,13 +129,62 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
         custom_profile();
     }
 
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+
+        for(int i=0;i<1000;i++)
+        {
+            outState.putBoolean("event" + Integer.toString(i), ischecked[i]);
+
+        }
+        //Toast.makeText(getBaseContext(),Boolean.toString(ischecked[0]),Toast.LENGTH_SHORT).show();
+        super.onSaveInstanceState(outState);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sync_event_list);
 
+        //to add logo to action bar
+        ActionBar ac=getSupportActionBar();
+        ac.setDisplayShowHomeEnabled(true);
+        ac.setLogo(R.drawable.occasus1);
+        ac.setDisplayUseLogoEnabled(true);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);//to hide back button on action bar
+        if(savedInstanceState!=null)
+        {
+
+            //Toast.makeText(getBaseContext(),"not null",Toast.LENGTH_SHORT).show();
+            //if(savedInstanceState.getBoolean("event" + Integer.toString(0)))
+            //Toast.makeText(getBaseContext(),"yeh",Toast.LENGTH_SHORT).show();
+            //else
+            //Toast.makeText(getBaseContext(),"nah",Toast.LENGTH_SHORT).show();
+            for (int i = 0; i < 1000; i++)
+            {
+                ischecked[i] = savedInstanceState.getBoolean("event"+Integer.toString(i));
+            }
+            //Toast.makeText(getBaseContext(),"updated="+Boolean.toString(ischecked[0]),Toast.LENGTH_SHORT).show();
+        }
+        else
+        {
+            // Toast.makeText(getBaseContext(),"null",Toast.LENGTH_SHORT).show();
+            for (int i = 0; i < 1000; i++)
+            {
+                ischecked[i] = false;
+            }
+        }
+
+
     }
 
+
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+    }
 
     @Override
     protected void onStart() {
@@ -124,16 +198,20 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
         sync_editor = sync_sharedpreferences.edit();
 
 
+
         set_profile=(Button) findViewById(R.id.eve_button);
+
         go_to_main=(Button) findViewById(R.id.go_to_main);
         select_all=(Button) findViewById(R.id.select_all_button);
 
         not_found1=(TextView) findViewById(R.id.no_eve_found1);
         not_found2=(TextView) findViewById(R.id.no_eve_found2);
         not_found_image=(ImageView) findViewById(R.id.not_found_image);
+        not_found_image.setImageResource(R.drawable.not_found);
         all_sync=(TextView) findViewById(R.id.all_sync_1);
         all_sync_image=(ImageView) findViewById(R.id.all_sync_image);
-        event_list_text=(TextView) findViewById(R.id.event_list);
+        all_sync_image.setImageResource(R.drawable.all_done);
+
 
 
         frag.setVisibility(View.INVISIBLE);
@@ -141,20 +219,36 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
         all_sync.setVisibility(View.INVISIBLE);
 
 
-        for(int i=0;i<1000;i++)
-        {
-            ischecked[i]=false;
-        }
+        adap=new default_profile_adapter(getBaseContext(),dialog_options);
 
 
-        String calendar=sync_sharedpreferences.getString("cal_name","");
+
+
+
+
+        Calendar beginTime = Calendar.getInstance();
+        beginTime.set(1980, 5, 26, 8, 0);
+        long startMillis = beginTime.getTimeInMillis();
+        Calendar endTime = Calendar.getInstance();
+        endTime.set(3000, 1, 6, 8, 0);
+        long endMillis = endTime.getTimeInMillis();
+
+        calendar_name=sync_sharedpreferences.getString("cal_name","");
 
         ContentResolver cr = getContentResolver();
 
+       /* Uri.Builder builder = CalendarContract.Instances.CONTENT_URI.buildUpon();
+        ContentUris.appendId(builder, startMillis);
+        ContentUris.appendId(builder, endMillis);
+        String selection2 = "((" + CalendarContract.Events.CALENDAR_DISPLAY_NAME + " = ?) AND (" + CalendarContract.Events.DELETED + " = 0))";
+        String[] selectionArgs2 = new String[]{calendar_name};
+        cur2 = cr.query(builder.build(), Event_projection, selection2, selectionArgs2, null);
+        cur2.moveToFirst();*/
         //Toast.makeText(getActivity().getBaseContext(), clicked_cal, Toast.LENGTH_SHORT).show();
+
         Uri uri2= CalendarContract.Events.CONTENT_URI;
         String selection2 = "((" + CalendarContract.Events.CALENDAR_DISPLAY_NAME + " = ?) AND (" + CalendarContract.Events.DELETED + " = 0))";
-        String[] selectionArgs2 = new String[]{calendar};
+        String[] selectionArgs2 = new String[]{calendar_name};
         cur2=cr.query(uri2,Event_projection,selection2,selectionArgs2,null);
         cur2.moveToFirst();
 
@@ -164,10 +258,11 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
             not_found1.setVisibility(View.VISIBLE);
             not_found2.setVisibility(View.VISIBLE);
             not_found_image.setVisibility(View.VISIBLE);
-            set_profile.setVisibility(View.INVISIBLE);
+
             l.setVisibility(View.INVISIBLE);
-            event_list_text.setVisibility(View.INVISIBLE);
+
             select_all.setVisibility(View.INVISIBLE);
+            set_profile.setVisibility(View.INVISIBLE);
             go_to_main.setVisibility(View.VISIBLE);
 
         }
@@ -177,8 +272,27 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
             not_found2.setVisibility(View.INVISIBLE);
             not_found_image.setVisibility(View.INVISIBLE);
             l.setVisibility(View.VISIBLE);
-            set_profile.setVisibility(View.INVISIBLE);
-            event_list_text.setVisibility(View.VISIBLE);
+            int visible_status=0;
+            for(int i=0;i<1000;i++)
+            {
+                if(ischecked[i])
+                    visible_status=1;
+            }
+            if(visible_status==0)
+            {
+                set_profile.setBackgroundColor(Color.rgb(240, 240, 240));
+                set_profile.setTextColor(Color.rgb(180, 180, 180));
+                set_profile.setClickable(false);
+                //set_profile.setVisibility(View.INVISIBLE);
+            }
+            else
+            {
+                set_profile.setBackground(go_to_main.getBackground());
+                set_profile.setTextColor(go_to_main.getTextColors());
+                set_profile.setClickable(true);
+                //set_profile.setVisibility(View.VISIBLE);
+            }
+
             select_all.setVisibility(View.VISIBLE);
 
 
@@ -190,6 +304,7 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                 global_event_list[1][total_no_of_events]=cur2.getString(0);
                 total_no_of_events++;
             } while (cur2.moveToNext());
+            //Toast.makeText(getBaseContext(),"onstart="+Boolean.toString(ischecked[0]),Toast.LENGTH_SHORT).show();
             show_events();
 
         }
@@ -250,7 +365,7 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                 cal.add(Calendar.HOUR_OF_DAY, duration);
 
                 java.util.Date date4 = new java.util.Date(cal.get(Calendar.YEAR) - 1900, cal.get(Calendar.MONTH),
-                                        cal.get(Calendar.DAY_OF_MONTH), 0, 0);
+                        cal.get(Calendar.DAY_OF_MONTH), 0, 0);
                 end_date = sdf.format(date4);
                 java.util.Date date3 = new java.util.Date(0, 0, 0, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE));
                 end_time = formatter.format(date3);
@@ -260,6 +375,9 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
 
 
             repeat_rules = cur2.getString(7);
+
+
+
             cur_day_monthly = "";
             if (repeat_rules == null)
             {
@@ -268,6 +386,72 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
             }
             else
             {
+
+
+                if((repeat_rules.charAt(5)=='W')&&(repeat_rules.charAt(12)=='U')&&(repeat_rules.length()==42))
+                {
+                    int year_1=Integer.valueOf(repeat_rules.substring(18,22));
+                    int month_1=Integer.valueOf(repeat_rules.substring(22,24))-1;
+                    int day_1=Integer.valueOf(repeat_rules.substring(24,26));
+                    //java.util.Date da = new java.util.Date(year_1 - 1900, month_1, day_1, 0, 0);
+                    Calendar cal_2=Calendar.getInstance();
+                    cal_2.set(Calendar.YEAR,year_1);
+                    cal_2.set(Calendar.MONTH,month_1);
+                    cal_2.set(Calendar.DAY_OF_MONTH,day_1);
+
+                    int day_of_week=cal_2.get(Calendar.DAY_OF_WEEK);
+                    if(day_of_week==0)
+                        repeat_rules=repeat_rules.concat(";BYDAY=SU");
+                    else if(day_of_week==1)
+                        repeat_rules=repeat_rules.concat(";BYDAY=MO");
+                    else if(day_of_week==2)
+                        repeat_rules=repeat_rules.concat(";BYDAY=TU");
+                    else if(day_of_week==3)
+                        repeat_rules=repeat_rules.concat(";BYDAY=WE");
+                    else if(day_of_week==4)
+                        repeat_rules=repeat_rules.concat(";BYDAY=TH");
+                    else if(day_of_week==5)
+                        repeat_rules=repeat_rules.concat(";BYDAY=FR");
+                    else if(day_of_week==6)
+                        repeat_rules=repeat_rules.concat(";BYDAY=SA");
+
+                    cal_2.add(Calendar.DAY_OF_MONTH,-7);
+                    java.util.Date change_month_date = new java.util.Date(cal_2.get(Calendar.YEAR) - 1900, cal_2.get(Calendar.MONTH),
+                            cal_2.get(Calendar.DAY_OF_MONTH), 0, 0);
+                    String end_change_date = sdf.format(change_month_date);
+                    String edit_date_in_until=end_change_date.substring(6)+end_change_date.substring(3,5)+end_change_date.substring(0,2);
+                    repeat_rules=repeat_rules.substring(0,18)+edit_date_in_until+repeat_rules.substring(26);
+
+                }
+
+                else if((repeat_rules.charAt(5)=='M')&&(repeat_rules.charAt(13)=='U')&&(repeat_rules.length()==43))
+                {
+
+                    int year_1=Integer.valueOf(repeat_rules.substring(19,23));
+                    int month_1=Integer.valueOf(repeat_rules.substring(23,25))-1;
+                    int day_1=Integer.valueOf(repeat_rules.substring(25,27));
+                    //java.util.Date da = new java.util.Date(year_1 - 1900, month_1, day_1, 0, 0);
+                    Calendar cal_2=Calendar.getInstance();
+                    cal_2.set(Calendar.YEAR,year_1);
+                    cal_2.set(Calendar.MONTH,month_1);
+                    cal_2.set(Calendar.DAY_OF_MONTH,day_1);
+
+                    int month_day=Integer.valueOf(start_date.substring(0, 2));
+                    repeat_rules=repeat_rules.concat(";BYMONTHDAY="+Integer.toString(month_day));
+
+                    cal_2.add(Calendar.MONTH,-1);
+                    java.util.Date change_month_date = new java.util.Date(cal_2.get(Calendar.YEAR) - 1900, cal_2.get(Calendar.MONTH),
+                            cal_2.get(Calendar.DAY_OF_MONTH), 0, 0);
+                    String end_change_date = sdf.format(change_month_date);
+                    String edit_date_in_until=end_change_date.substring(6)+end_change_date.substring(3,5)+end_change_date.substring(0,2);
+                    repeat_rules=repeat_rules.substring(0,19)+edit_date_in_until+repeat_rules.substring(27);
+
+                }
+
+
+
+
+
                 switch (repeat_rules.charAt(5))
                 {
                     case 'D'://repeat="1";
@@ -300,7 +484,7 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                         else if (repeat_rules.charAt(11) == 'U')
                         {
                             SimpleDateFormat sdf1 = new SimpleDateFormat("dd/MM/yyyy");
-                            int day = Integer.valueOf(repeat_rules.substring(23, 25)) + 1;
+                            int day = Integer.valueOf(repeat_rules.substring(23, 25)) ;
                             int month = Integer.valueOf(repeat_rules.substring(21, 23)) - 1;
                             int year = Integer.valueOf(repeat_rules.substring(17, 21));
                             java.util.Date d = new java.util.Date(year - 1900, month, day, 0, 0);
@@ -393,9 +577,9 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                         } else if (repeat_rules.charAt(12) == 'U') {
                             char[] days_selected = new char[7];
                             SimpleDateFormat sdf1 = new SimpleDateFormat("dd/MM/yyyy");
-                            int day = Integer.valueOf(repeat_rules.substring(23, 25)) + 1;
-                            int month = Integer.valueOf(repeat_rules.substring(21, 23)) - 1;
-                            int year = Integer.valueOf(repeat_rules.substring(17, 21));
+                            int day = Integer.valueOf(repeat_rules.substring(24, 26)) ;
+                            int month = Integer.valueOf(repeat_rules.substring(22, 24)) - 1;
+                            int year = Integer.valueOf(repeat_rules.substring(18, 22));
                             java.util.Date d = new java.util.Date(year - 1900, month, day, 0, 0);
                             String s = sdf1.format(d);
                             repeat_until = "1_" + s;
@@ -514,7 +698,7 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                         }
                         break;
                     case 'M'://repeat="3";
-                        char radio;
+                        int radio;
                         if (repeat_rules.charAt(13) == 'C') {
                             int p;
                             for (p = 19; p < repeat_rules.length(); p++) {
@@ -530,9 +714,9 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                                 }
                                 if (repeat_rules.charAt(y + 11) == 'M') {
                                     if (repeat_rules.charAt(y + 20) == '-')
-                                        radio = '3';
+                                        radio = 3;
                                     else
-                                        radio = '1';
+                                        radio = 1;
                                 } else {
                                     radio = 2;
                                     if (repeat_rules.charAt(15 + y) == '-') {
@@ -578,13 +762,13 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                                             cur_day_monthly = cur_day_monthly + "Sunday";
                                     }
                                 }
-                                repeat = "5_2_" + repeat_rules.substring(19, p) + "_" + radio + "_" + start_date.substring(0, 2);
+                                repeat = "5_2_" + repeat_rules.substring(19, p) + "_" + Integer.toString(radio) + "_" + start_date.substring(0, 2);
                             } else {
                                 if (repeat_rules.charAt(p + 11) == 'M') {
                                     if (repeat_rules.charAt(p + 20) == '-')
-                                        radio = '3';
+                                        radio = 3;
                                     else
-                                        radio = '1';
+                                        radio = 1;
                                 } else {
                                     radio = 2;
                                     if (repeat_rules.charAt(p + 15) == '-') {
@@ -631,13 +815,13 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                                     }
 
                                 }
-                                repeat = "5_2_1_" + radio + "_" + start_date.substring(0, 2);
+                                repeat = "5_2_1_" + Integer.toString(radio) + "_" + start_date.substring(0, 2);
                             }
                         } else if (repeat_rules.charAt(13) == 'U') {
                             SimpleDateFormat sdf1 = new SimpleDateFormat("dd/MM/yyyy");
-                            int day = Integer.valueOf(repeat_rules.substring(23, 25)) + 1;
-                            int month = Integer.valueOf(repeat_rules.substring(21, 23)) - 1;
-                            int year = Integer.valueOf(repeat_rules.substring(17, 21));
+                            int day = Integer.valueOf(repeat_rules.substring(25, 27)) ;
+                            int month = Integer.valueOf(repeat_rules.substring(23, 25)) - 1;
+                            int year = Integer.valueOf(repeat_rules.substring(19, 23));
                             java.util.Date d = new java.util.Date(year - 1900, month, day, 0, 0);
                             String s = sdf1.format(d);
                             repeat_until = "1_" + s;
@@ -697,7 +881,7 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                                             cur_day_monthly = cur_day_monthly + "Sunday";
                                     }
                                 }
-                                repeat = "5_2_" + repeat_rules.substring(45, p) + "_" + radio + "_" + start_date.substring(0, 2);
+                                repeat = "5_2_" + repeat_rules.substring(45, p) + "_" + Integer.toString(radio) + "_" + start_date.substring(0, 2);
                             } else {
                                 if (repeat_rules.charAt(46) == 'M') {
                                     if (repeat_rules.charAt(55) == '-')
@@ -749,7 +933,7 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                                             cur_day_monthly = cur_day_monthly + "Sunday";
                                     }
                                 }
-                                repeat = "5_2_1_" + radio + "_" + start_date.substring(0, 2);
+                                repeat = "5_2_1_" + Integer.toString(radio) + "_" + start_date.substring(0, 2);
                             }
                         } else {
                             repeat_until = "0";
@@ -809,59 +993,69 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                                             cur_day_monthly = cur_day_monthly + "Sunday";
                                     }
                                 }
-                                repeat = "5_2_" + repeat_rules.substring(22, p) + "_" + radio + "_" + start_date.substring(0, 2);
+                                repeat = "5_2_" + repeat_rules.substring(22, p) + "_" + Integer.toString(radio) + "_" + start_date.substring(0, 2);
                             } else {
-                                if (repeat_rules.charAt(23) == 'M') {
-                                    if (repeat_rules.charAt(32) == '-')
-                                        radio = 3;
-                                    else
-                                        radio = 1;
-                                } else {
-                                    radio = 2;
-                                    if (repeat_rules.charAt(27) == '-') {
-                                        cur_day_monthly = "on every last ";
-                                        if (repeat_rules.charAt(29) == 'M')
-                                            cur_day_monthly = cur_day_monthly + "Monday";
-                                        else if ((repeat_rules.charAt(29) == 'T') && (repeat_rules.charAt(30) == 'U'))
-                                            cur_day_monthly = cur_day_monthly + "Tuesday";
-                                        else if ((repeat_rules.charAt(29) == 'W'))
-                                            cur_day_monthly = cur_day_monthly + "Wednesday";
-                                        else if ((repeat_rules.charAt(29) == 'T') && (repeat_rules.charAt(30) == 'H'))
-                                            cur_day_monthly = cur_day_monthly + "Thursday";
-                                        else if (repeat_rules.charAt(29) == 'F')
-                                            cur_day_monthly = cur_day_monthly + "Friday";
-                                        else if ((repeat_rules.charAt(29) == 'S') && (repeat_rules.charAt(30) == 'A'))
-                                            cur_day_monthly = cur_day_monthly + "Saturday";
-                                        else
-                                            cur_day_monthly = cur_day_monthly + "Sunday";
-                                    } else {
-                                        cur_day_monthly = "on every ";
-                                        if (repeat_rules.charAt(27) == '1')
-                                            cur_day_monthly = cur_day_monthly + "first ";
-                                        else if (repeat_rules.charAt(27) == '2')
-                                            cur_day_monthly = cur_day_monthly + "second ";
-                                        else if (repeat_rules.charAt(27) == '3')
-                                            cur_day_monthly = cur_day_monthly + "third";
-                                        else if (repeat_rules.charAt(27) == '4')
-                                            cur_day_monthly = cur_day_monthly + "fourth ";
-
-                                        if (repeat_rules.charAt(28) == 'M')
-                                            cur_day_monthly = cur_day_monthly + "Monday";
-                                        else if ((repeat_rules.charAt(28) == 'T') && (repeat_rules.charAt(29) == 'U'))
-                                            cur_day_monthly = cur_day_monthly + "Tuesday";
-                                        else if ((repeat_rules.charAt(28) == 'W'))
-                                            cur_day_monthly = cur_day_monthly + "Wednesday";
-                                        else if ((repeat_rules.charAt(28) == 'T') && (repeat_rules.charAt(29) == 'H'))
-                                            cur_day_monthly = cur_day_monthly + "Thursday";
-                                        else if (repeat_rules.charAt(28) == 'F')
-                                            cur_day_monthly = cur_day_monthly + "Friday";
-                                        else if ((repeat_rules.charAt(28) == 'S') && (repeat_rules.charAt(29) == 'A'))
-                                            cur_day_monthly = cur_day_monthly + "Saturday";
-                                        else
-                                            cur_day_monthly = cur_day_monthly + "Sunday";
-                                    }
+                                if(repeat_rules.length()==20)
+                                {
+                                    repeat="3";
                                 }
-                                repeat = "5_2_1_" + radio + "_" + start_date.substring(0, 2);
+                                else
+                                {
+                                    if (repeat_rules.charAt(23) == 'M') {
+                                        if (repeat_rules.charAt(32) == '-')
+                                            radio = 3;
+                                        else
+                                            radio = 1;
+                                    }
+                                    else
+                                    {
+                                        radio = 2;
+                                        if (repeat_rules.charAt(27) == '-') {
+                                            cur_day_monthly = "on every last ";
+                                            if (repeat_rules.charAt(29) == 'M')
+                                                cur_day_monthly = cur_day_monthly + "Monday";
+                                            else if ((repeat_rules.charAt(29) == 'T') && (repeat_rules.charAt(30) == 'U'))
+                                                cur_day_monthly = cur_day_monthly + "Tuesday";
+                                            else if ((repeat_rules.charAt(29) == 'W'))
+                                                cur_day_monthly = cur_day_monthly + "Wednesday";
+                                            else if ((repeat_rules.charAt(29) == 'T') && (repeat_rules.charAt(30) == 'H'))
+                                                cur_day_monthly = cur_day_monthly + "Thursday";
+                                            else if (repeat_rules.charAt(29) == 'F')
+                                                cur_day_monthly = cur_day_monthly + "Friday";
+                                            else if ((repeat_rules.charAt(29) == 'S') && (repeat_rules.charAt(30) == 'A'))
+                                                cur_day_monthly = cur_day_monthly + "Saturday";
+                                            else
+                                                cur_day_monthly = cur_day_monthly + "Sunday";
+                                        } else {
+                                            cur_day_monthly = "on every ";
+                                            if (repeat_rules.charAt(27) == '1')
+                                                cur_day_monthly = cur_day_monthly + "first ";
+                                            else if (repeat_rules.charAt(27) == '2')
+                                                cur_day_monthly = cur_day_monthly + "second ";
+                                            else if (repeat_rules.charAt(27) == '3')
+                                                cur_day_monthly = cur_day_monthly + "third";
+                                            else if (repeat_rules.charAt(27) == '4')
+                                                cur_day_monthly = cur_day_monthly + "fourth ";
+
+                                            if (repeat_rules.charAt(28) == 'M')
+                                                cur_day_monthly = cur_day_monthly + "Monday";
+                                            else if ((repeat_rules.charAt(28) == 'T') && (repeat_rules.charAt(29) == 'U'))
+                                                cur_day_monthly = cur_day_monthly + "Tuesday";
+                                            else if ((repeat_rules.charAt(28) == 'W'))
+                                                cur_day_monthly = cur_day_monthly + "Wednesday";
+                                            else if ((repeat_rules.charAt(28) == 'T') && (repeat_rules.charAt(29) == 'H'))
+                                                cur_day_monthly = cur_day_monthly + "Thursday";
+                                            else if (repeat_rules.charAt(28) == 'F')
+                                                cur_day_monthly = cur_day_monthly + "Friday";
+                                            else if ((repeat_rules.charAt(28) == 'S') && (repeat_rules.charAt(29) == 'A'))
+                                                cur_day_monthly = cur_day_monthly + "Saturday";
+                                            else
+                                                cur_day_monthly = cur_day_monthly + "Sunday";
+                                        }
+                                    }
+                                    repeat = "5_2_1_" + Integer.toString(radio) + "_" + start_date.substring(0, 2);
+                                }
+
                             }
                         }
                         break;
@@ -885,9 +1079,9 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                             }
                         } else if (repeat_rules.charAt(12) == 'U') {
                             SimpleDateFormat sdf1 = new SimpleDateFormat("dd/MM/yyyy");
-                            int day = Integer.valueOf(repeat_rules.substring(23, 25)) + 1;
-                            int month = Integer.valueOf(repeat_rules.substring(21, 23)) - 1;
-                            int year = Integer.valueOf(repeat_rules.substring(17, 21));
+                            int day = Integer.valueOf(repeat_rules.substring(24, 26)) ;
+                            int month = Integer.valueOf(repeat_rules.substring(22, 24)) - 1;
+                            int year = Integer.valueOf(repeat_rules.substring(18, 22));
                             java.util.Date d = new java.util.Date(year - 1900, month, day, 0, 0);
                             String s = sdf1.format(d);
                             repeat_until = "1_" + s;
@@ -933,31 +1127,32 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                 {
 
                     if (
-                            (name.equals(c.getString(c.getColumnIndex("event_name")))) &&
-                            (description.equals(c.getString(c.getColumnIndex("description")))) &&
-                            (start_date.equals(c.getString(c.getColumnIndex("event_start_date")))) &&
-                            (end_date.equals(c.getString(c.getColumnIndex("event_end_date")))) &&
-                            (start_time.equals(c.getString(c.getColumnIndex("start_time")))) &&
-                            (end_time.equals(c.getString(c.getColumnIndex("end_time")))) &&
-                            (repeat.equals(c.getString(c.getColumnIndex("repeat")))) &&
-                            (repeat_until.equals(c.getString(c.getColumnIndex("repeat_until"))))
-                    )
+                            (name.equals(c.getString(c.getColumnIndex("event_name"))))  &&
+                                    (start_date.equals(c.getString(c.getColumnIndex("event_start_date")))) &&
+                                    (end_date.equals(c.getString(c.getColumnIndex("event_end_date")))) &&
+                                    (start_time.equals(c.getString(c.getColumnIndex("start_time")))) &&
+                                    (end_time.equals(c.getString(c.getColumnIndex("end_time")))) &&
+                                    (repeat.equals(c.getString(c.getColumnIndex("repeat")))) &&
+                                    (repeat_until.equals(c.getString(c.getColumnIndex("repeat_until"))))&&
+                                    (
+                                            ((description==null)&&(c.getString(c.getColumnIndex("description"))==null)) ||
+                                                    (description.equals(c.getString(c.getColumnIndex("description")))))
+                            )
                     {
                         already_synced = 1;
                         break;
                     }
                 } while (c.moveToNext());
 
-                 if (already_synced == 0)
-                 {
-                     copy_eve_list[0][no_of_events_not_synced] = global_event_list[0][i];
-                     copy_eve_list[1][no_of_events_not_synced] = global_event_list[1][i];
-                     no_of_events_not_synced++;
-                 }
+                if (already_synced == 0)
+                {
+                    copy_eve_list[0][no_of_events_not_synced] = global_event_list[0][i];
+                    copy_eve_list[1][no_of_events_not_synced] = global_event_list[1][i];
+                    no_of_events_not_synced++;
+                }
             }
             else
             {
-                Toast.makeText(getBaseContext(),"hoohoo",Toast.LENGTH_SHORT).show();
                 copy_eve_list[0][no_of_events_not_synced] = global_event_list[0][i];
                 copy_eve_list[1][no_of_events_not_synced] = global_event_list[1][i];
                 no_of_events_not_synced++;
@@ -980,8 +1175,9 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
         if(no_of_events_not_synced==0)
         {
             l.setVisibility(View.INVISIBLE);
-            event_list_text.setVisibility(View.INVISIBLE);
+
             select_all.setVisibility(View.INVISIBLE);
+            set_profile.setVisibility(View.INVISIBLE);
             go_to_main.setVisibility(View.VISIBLE);
             all_sync.setVisibility(View.VISIBLE);
             all_sync_image.setVisibility(View.VISIBLE);
@@ -993,7 +1189,7 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
             for (int iow = 0; iow < no_of_events_not_synced; iow++) {
                 eve_list[0][iow] = copy_eve_list[0][iow];
                 eve_list[1][iow] = copy_eve_list[0][iow];
-                ischecked[iow] = false;
+                //ischecked[iow] = false;
             }
 
             eve_adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_multiple_choice, eve_list[0]);
@@ -1015,20 +1211,32 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                                 break;
                             }
                         }
-                        if (i == no_of_events_not_synced) {
-                            set_profile.setVisibility(View.INVISIBLE);
+                        if (i == no_of_events_not_synced)
+                        {
+                            set_profile.setBackgroundColor(Color.rgb(240, 240, 240));
+                            set_profile.setTextColor(Color.rgb(180, 180, 180));
+                            set_profile.setClickable(false);
+                            //set_profile.setVisibility(View.INVISIBLE);
                         } else {
-                            set_profile.setVisibility(View.VISIBLE);
+                            set_profile.setBackground(go_to_main.getBackground());
+                            set_profile.setTextColor(go_to_main.getTextColors());
+                            set_profile.setClickable(true);
+                            //set_profile.setVisibility(View.VISIBLE);
                         }
                     } else {
-                        //Toast.makeText(getBaseContext(),"position"+Integer.toString(position),Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(getBaseContext(),"now",Toast.LENGTH_SHORT).show();
                         ischecked[position] = true;
-                        set_profile.setVisibility(View.VISIBLE);
+                        set_profile.setBackground(go_to_main.getBackground());
+                        set_profile.setTextColor(go_to_main.getTextColors());
+                        set_profile.setClickable(true);
+                        //set_profile.setVisibility(View.VISIBLE);
                     }
                 }
             });
 
         }
+
+        //Toast.makeText(getBaseContext(),"show="+Boolean.toString(ischecked[0]),Toast.LENGTH_SHORT).show();
 
     }
 
@@ -1047,7 +1255,10 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                 l.setItemChecked(i, true);
                 ischecked[i] = true;
             }
-            set_profile.setVisibility(View.VISIBLE);
+            set_profile.setBackground(go_to_main.getBackground());
+            set_profile.setTextColor(go_to_main.getTextColors());
+            set_profile.setClickable(true);
+            //set_profile.setVisibility(View.VISIBLE);
         }
         else
         {
@@ -1056,7 +1267,10 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                 l.setItemChecked(i, false);
                 ischecked[i] = false;
             }
-            set_profile.setVisibility(View.INVISIBLE);
+            set_profile.setBackgroundColor(Color.rgb(240, 240, 240));
+            set_profile.setTextColor(Color.rgb(180, 180, 180));
+            set_profile.setClickable(false);
+            //set_profile.setVisibility(View.INVISIBLE);
         }
     }
 
@@ -1074,14 +1288,42 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
         switch (id)
         {
             case 0:return new AlertDialog.Builder(this)
-                    .setIcon(R.drawable.ic_launcher)
+                    .setIcon(R.drawable.profile_dialog)
                     .setTitle("Select a profile")
-                    .setItems(dialog_options, new DialogInterface.OnClickListener() {
+                    .setAdapter(adap, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             if(which==0)
                             {
+                                wifi_status="no";
+                                bluetooth_status="no";
+                                mobiledata_status="no";
+                                profile_status="silent";
+                                custom_profile();
+                            }
+                            else
+                            {
+                                frag.setVisibility(View.VISIBLE);
+                                l.setVisibility(View.INVISIBLE);
+                                set_profile.setBackgroundColor(Color.rgb(240, 240, 240));
+                                set_profile.setTextColor(Color.rgb(180, 180, 180));
+                                set_profile.setClickable(false);
+                                set_profile.setVisibility(View.INVISIBLE);
 
+                                go_to_main.setVisibility(View.INVISIBLE);
+                                select_all.setVisibility(View.INVISIBLE);
+                            }
+                        }
+                    })
+                    /*.setItems(dialog_options, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            if(which==0)
+                            {
+                                wifi_status="no";
+                                bluetooth_status="no";
+                                mobiledata_status="no";
+                                profile_status="silent";
                             }
                             else
                             {
@@ -1093,10 +1335,10 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                                 select_all.setVisibility(View.INVISIBLE);
                             }
                         }
-                    }).create();
+                    })*/.create();
 
             case 1: return new AlertDialog.Builder(this)
-                    .setIcon(R.drawable.ic_launcher)
+                    .setIcon(R.drawable.ring_dialog)
                     .setTitle("Choose a profile")
                     .setAdapter(profile_adapter, new DialogInterface.OnClickListener() {
                         @Override
@@ -1115,6 +1357,7 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
         {
             if(ischecked[index])
             {
+                create_pending_intent=0;
                 String id=copy_eve_list[1][index];
 
                 cur2.moveToFirst();
@@ -1176,7 +1419,7 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                         int start_year=Integer.valueOf(start_date.substring(6));
                         int end_day=Integer.valueOf(end_date.substring(0,2));
                         int end_month=Integer.valueOf(end_date.substring(3,5))-1;
-                        int end_year=Integer.valueOf(end_date.substring(3,5))-1;
+                        int end_year=Integer.valueOf(end_date.substring(6));
 
                         Calendar c1=Calendar.getInstance();
                         c1.set(Calendar.DAY_OF_MONTH,start_day);
@@ -1206,6 +1449,7 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
 
 
 
+
                         repeat_rules=cur2.getString(7);
                         cur_day_monthly="";
                         if(repeat_rules==null)
@@ -1215,6 +1459,74 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                         }
                         else
                         {
+
+
+
+                            if((repeat_rules.charAt(5)=='W')&&(repeat_rules.charAt(12)=='U')&&(repeat_rules.length()==42))
+                            {
+                                int year_1=Integer.valueOf(repeat_rules.substring(18,22));
+                                int month_1=Integer.valueOf(repeat_rules.substring(22,24))-1;
+                                int day_1=Integer.valueOf(repeat_rules.substring(24,26));
+                                //java.util.Date da = new java.util.Date(year_1 - 1900, month_1, day_1, 0, 0);
+                                Calendar cal_2=Calendar.getInstance();
+                                cal_2.set(Calendar.YEAR,year_1);
+                                cal_2.set(Calendar.MONTH,month_1);
+                                cal_2.set(Calendar.DAY_OF_MONTH,day_1);
+
+                                int day_of_week=cal_2.get(Calendar.DAY_OF_WEEK);
+                                if(day_of_week==0)
+                                    repeat_rules=repeat_rules.concat(";BYDAY=SU");
+                                else if(day_of_week==1)
+                                    repeat_rules=repeat_rules.concat(";BYDAY=MO");
+                                else if(day_of_week==2)
+                                    repeat_rules=repeat_rules.concat(";BYDAY=TU");
+                                else if(day_of_week==3)
+                                    repeat_rules=repeat_rules.concat(";BYDAY=WE");
+                                else if(day_of_week==4)
+                                    repeat_rules=repeat_rules.concat(";BYDAY=TH");
+                                else if(day_of_week==5)
+                                    repeat_rules=repeat_rules.concat(";BYDAY=FR");
+                                else if(day_of_week==6)
+                                    repeat_rules=repeat_rules.concat(";BYDAY=SA");
+
+                                cal_2.add(Calendar.DAY_OF_MONTH,-7);
+                                java.util.Date change_month_date = new java.util.Date(cal_2.get(Calendar.YEAR) - 1900, cal_2.get(Calendar.MONTH),
+                                        cal_2.get(Calendar.DAY_OF_MONTH), 0, 0);
+                                String end_change_date = sdf.format(change_month_date);
+                                String edit_date_in_until=end_change_date.substring(6)+end_change_date.substring(3,5)+end_change_date.substring(0,2);
+                                repeat_rules=repeat_rules.substring(0,18)+edit_date_in_until+repeat_rules.substring(26);
+
+                            }
+
+                            else if((repeat_rules.charAt(5)=='M')&&(repeat_rules.charAt(13)=='U')&&(repeat_rules.length()==43))
+                            {
+                                int year_1=Integer.valueOf(repeat_rules.substring(19,23));
+                                int month_1=Integer.valueOf(repeat_rules.substring(23,25))-1;
+                                int day_1=Integer.valueOf(repeat_rules.substring(25,27));
+                                //java.util.Date da = new java.util.Date(year_1 - 1900, month_1, day_1, 0, 0);
+                                Calendar cal_2=Calendar.getInstance();
+                                cal_2.set(Calendar.YEAR,year_1);
+                                cal_2.set(Calendar.MONTH,month_1);
+                                cal_2.set(Calendar.DAY_OF_MONTH,day_1);
+
+                                int month_day=Integer.valueOf(start_date.substring(0, 2));
+                                repeat_rules=repeat_rules.concat(";BYMONTHDAY="+Integer.toString(month_day));
+
+                                cal_2.add(Calendar.MONTH,-1);
+                                java.util.Date change_month_date = new java.util.Date(cal_2.get(Calendar.YEAR) - 1900, cal_2.get(Calendar.MONTH),
+                                        cal_2.get(Calendar.DAY_OF_MONTH), 0, 0);
+                                String end_change_date = sdf.format(change_month_date);
+                                String edit_date_in_until=end_change_date.substring(6)+end_change_date.substring(3,5)+end_change_date.substring(0,2);
+                                repeat_rules=repeat_rules.substring(0,19)+edit_date_in_until+repeat_rules.substring(27);
+
+                            }
+
+
+
+
+
+
+
                             switch (repeat_rules.charAt(5))
                             {
                                 case 'D'://repeat="1";
@@ -1246,12 +1558,13 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                                     else if(repeat_rules.charAt(11)=='U')
                                     {
                                         SimpleDateFormat sdf1 = new SimpleDateFormat("dd/MM/yyyy");
-                                        int day=Integer.valueOf(repeat_rules.substring(23,25))+1;
+                                        int day=Integer.valueOf(repeat_rules.substring(23,25));
                                         int month=Integer.valueOf(repeat_rules.substring(21,23))-1;
                                         int year=Integer.valueOf(repeat_rules.substring(17, 21));
                                         java.util.Date d = new java.util.Date(year-1900,month, day,0,0);
                                         String s=sdf1.format(d);
                                         repeat_until="1_"+s;
+
                                         if(repeat_rules.charAt(34)=='I')
                                         {
                                             int p;
@@ -1326,7 +1639,7 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                                                 h=h+3;
                                             }
                                             repeat="5_1_"+repeat_rules.substring(p+10,y)+"_"+days_selected[0]+days_selected[1]+
-                                            days_selected[2]+days_selected[3]+days_selected[4]+days_selected[5]+days_selected[6];
+                                                    days_selected[2]+days_selected[3]+days_selected[4]+days_selected[5]+days_selected[6];
                                         }
                                         else
                                         {
@@ -1358,9 +1671,9 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                                     {
                                         char[] days_selected=new char[7];
                                         SimpleDateFormat sdf1 = new SimpleDateFormat("dd/MM/yyyy");
-                                        int day=Integer.valueOf(repeat_rules.substring(23,25))+1;
-                                        int month=Integer.valueOf(repeat_rules.substring(21,23))-1;
-                                        int year=Integer.valueOf(repeat_rules.substring(17, 21));
+                                        int day=Integer.valueOf(repeat_rules.substring(24,26));
+                                        int month=Integer.valueOf(repeat_rules.substring(22,24))-1;
+                                        int year=Integer.valueOf(repeat_rules.substring(18, 22));
                                         java.util.Date d = new java.util.Date(year-1900,month, day,0,0);
                                         String s=sdf1.format(d);
                                         repeat_until="1_"+s;
@@ -1397,7 +1710,7 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                                                 h=h+3;
                                             }
                                             repeat="5_1_"+repeat_rules.substring(44,y)+"_"+days_selected[0]+days_selected[1]+
-                                            days_selected[2]+days_selected[3]+days_selected[4]+days_selected[5]+days_selected[6];
+                                                    days_selected[2]+days_selected[3]+days_selected[4]+days_selected[5]+days_selected[6];
                                         }
                                         else
                                         {
@@ -1461,7 +1774,7 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                                                 h=h+3;
                                             }
                                             repeat="5_1_"+repeat_rules.substring(21,p)+"_"+days_selected[0]+days_selected[1]+
-                                            days_selected[2]+days_selected[3]+days_selected[4]+days_selected[5]+days_selected[6];
+                                                    days_selected[2]+days_selected[3]+days_selected[4]+days_selected[5]+days_selected[6];
                                         }
                                         else
                                         {
@@ -1518,9 +1831,9 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                                             if(repeat_rules.charAt(y+11)=='M')
                                             {
                                                 if(repeat_rules.charAt(y+20)=='-')
-                                                    radio='3';
+                                                    radio= 3;
                                                 else
-                                                    radio='1';
+                                                    radio= 1;
                                             }
                                             else
                                             {
@@ -1571,16 +1884,16 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                                                         cur_day_monthly = cur_day_monthly + "Sunday";
                                                 }
                                             }
-                                            repeat="5_2_"+repeat_rules.substring(19,p)+"_"+radio+"_"+start_date.substring(0,2);
+                                            repeat="5_2_"+repeat_rules.substring(19,p)+"_"+Integer.toString(radio)+"_"+start_date.substring(0, 2);
                                         }
                                         else
                                         {
                                             if(repeat_rules.charAt(p+11)=='M')
                                             {
                                                 if(repeat_rules.charAt(p+20)=='-')
-                                                    radio='3';
+                                                    radio= 3;
                                                 else
-                                                    radio='1';
+                                                    radio= 1;
                                             }
                                             else
                                             {
@@ -1632,18 +1945,19 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                                                 }
 
                                             }
-                                            repeat="5_2_1_"+radio+"_"+start_date.substring(0,2);
+                                            repeat="5_2_1_"+Integer.toString(radio)+"_"+start_date.substring(0,2);
                                         }
                                     }
                                     else if(repeat_rules.charAt(13)=='U')
                                     {
                                         SimpleDateFormat sdf1 = new SimpleDateFormat("dd/MM/yyyy");
-                                        int day=Integer.valueOf(repeat_rules.substring(23,25))+1;
-                                        int month=Integer.valueOf(repeat_rules.substring(21,23))-1;
-                                        int year=Integer.valueOf(repeat_rules.substring(17, 21));
+                                        int day=Integer.valueOf(repeat_rules.substring(25,27));
+                                        int month=Integer.valueOf(repeat_rules.substring(23,25))-1;
+                                        int year=Integer.valueOf(repeat_rules.substring(19, 23));
                                         java.util.Date d = new java.util.Date(year-1900,month, day,0,0);
                                         String s=sdf1.format(d);
                                         repeat_until="1_"+s;
+
                                         if(repeat_rules.charAt(36)=='I')
                                         {
                                             int p;
@@ -1707,7 +2021,7 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                                                         cur_day_monthly = cur_day_monthly + "Sunday";
                                                 }
                                             }
-                                            repeat="5_2_"+repeat_rules.substring(45,p)+"_"+radio+"_"+start_date.substring(0,2);
+                                            repeat="5_2_"+repeat_rules.substring(45,p)+"_"+Integer.toString(radio)+"_"+start_date.substring(0, 2);
                                         }
                                         else
                                         {
@@ -1766,7 +2080,7 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                                                         cur_day_monthly = cur_day_monthly + "Sunday";
                                                 }
                                             }
-                                            repeat="5_2_1_"+radio+"_"+start_date.substring(0,2);
+                                            repeat="5_2_1_"+Integer.toString(radio)+"_"+start_date.substring(0,2);
                                         }
                                     }
                                     else
@@ -1835,66 +2149,69 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                                                         cur_day_monthly = cur_day_monthly + "Sunday";
                                                 }
                                             }
-                                            repeat="5_2_"+repeat_rules.substring(22,p)+"_"+radio+"_"+start_date.substring(0,2);
+                                            repeat="5_2_"+repeat_rules.substring(22,p)+"_"+Integer.toString(radio)+"_"+start_date.substring(0, 2);
                                         }
                                         else
                                         {
-                                            if(repeat_rules.charAt(23)=='M')
+                                            if(repeat_rules.length()==20)
                                             {
-                                                if(repeat_rules.charAt(32)=='-')
-                                                    radio=3;
-                                                else
-                                                    radio=1;
+                                                repeat="3";
                                             }
-                                            else
-                                            {
-                                                radio=2;
-                                                if(repeat_rules.charAt(27)=='-')
-                                                {
-                                                    cur_day_monthly="on every last ";
-                                                    if(repeat_rules.charAt(29)=='M')
-                                                        cur_day_monthly=cur_day_monthly+"Monday";
-                                                    else if((repeat_rules.charAt(29)=='T')&&(repeat_rules.charAt(30)=='U'))
-                                                        cur_day_monthly=cur_day_monthly+"Tuesday";
-                                                    else if((repeat_rules.charAt(29)=='W'))
-                                                        cur_day_monthly=cur_day_monthly+"Wednesday";
-                                                    else if((repeat_rules.charAt(29)=='T')&&(repeat_rules.charAt(30)=='H'))
-                                                        cur_day_monthly=cur_day_monthly+"Thursday";
-                                                    else if(repeat_rules.charAt(29)=='F')
-                                                        cur_day_monthly=cur_day_monthly+"Friday";
-                                                    else if((repeat_rules.charAt(29)=='S')&&(repeat_rules.charAt(30)=='A'))
-                                                        cur_day_monthly=cur_day_monthly+"Saturday";
+                                            else {
+                                                if (repeat_rules.charAt(23) == 'M') {
+                                                    if (repeat_rules.charAt(32) == '-')
+                                                        radio = 3;
                                                     else
-                                                        cur_day_monthly=cur_day_monthly+"Sunday";
-                                                }
-                                                else {
-                                                    cur_day_monthly = "on every ";
-                                                    if (repeat_rules.charAt(27) == '1')
-                                                        cur_day_monthly = cur_day_monthly + "first ";
-                                                    else if (repeat_rules.charAt(27) == '2')
-                                                        cur_day_monthly = cur_day_monthly + "second ";
-                                                    else if (repeat_rules.charAt(27) == '3')
-                                                        cur_day_monthly = cur_day_monthly + "third";
-                                                    else if (repeat_rules.charAt(27) == '4')
-                                                        cur_day_monthly = cur_day_monthly + "fourth ";
+                                                        radio = 1;
+                                                } else {
+                                                    radio = 2;
+                                                    if (repeat_rules.charAt(27) == '-') {
+                                                        cur_day_monthly = "on every last ";
+                                                        if (repeat_rules.charAt(29) == 'M')
+                                                            cur_day_monthly = cur_day_monthly + "Monday";
+                                                        else if ((repeat_rules.charAt(29) == 'T') && (repeat_rules.charAt(30) == 'U'))
+                                                            cur_day_monthly = cur_day_monthly + "Tuesday";
+                                                        else if ((repeat_rules.charAt(29) == 'W'))
+                                                            cur_day_monthly = cur_day_monthly + "Wednesday";
+                                                        else if ((repeat_rules.charAt(29) == 'T') && (repeat_rules.charAt(30) == 'H'))
+                                                            cur_day_monthly = cur_day_monthly + "Thursday";
+                                                        else if (repeat_rules.charAt(29) == 'F')
+                                                            cur_day_monthly = cur_day_monthly + "Friday";
+                                                        else if ((repeat_rules.charAt(29) == 'S') && (repeat_rules.charAt(30) == 'A'))
+                                                            cur_day_monthly = cur_day_monthly + "Saturday";
+                                                        else
+                                                            cur_day_monthly = cur_day_monthly + "Sunday";
+                                                    } else {
+                                                        cur_day_monthly = "on every ";
+                                                        if (repeat_rules.charAt(27) == '1')
+                                                            cur_day_monthly = cur_day_monthly + "first ";
+                                                        else if (repeat_rules.charAt(27) == '2')
+                                                            cur_day_monthly = cur_day_monthly + "second ";
+                                                        else if (repeat_rules.charAt(27) == '3')
+                                                            cur_day_monthly = cur_day_monthly + "third";
+                                                        else if (repeat_rules.charAt(27) == '4')
+                                                            cur_day_monthly = cur_day_monthly + "fourth ";
 
-                                                    if (repeat_rules.charAt(28) == 'M')
-                                                        cur_day_monthly = cur_day_monthly + "Monday";
-                                                    else if ((repeat_rules.charAt(28) == 'T') && (repeat_rules.charAt(29) == 'U'))
-                                                        cur_day_monthly = cur_day_monthly + "Tuesday";
-                                                    else if ((repeat_rules.charAt(28) == 'W'))
-                                                        cur_day_monthly = cur_day_monthly + "Wednesday";
-                                                    else if ((repeat_rules.charAt(28) == 'T') && (repeat_rules.charAt(29) == 'H'))
-                                                        cur_day_monthly = cur_day_monthly + "Thursday";
-                                                    else if (repeat_rules.charAt(28) == 'F')
-                                                        cur_day_monthly = cur_day_monthly + "Friday";
-                                                    else if ((repeat_rules.charAt(28) == 'S') && (repeat_rules.charAt(29) == 'A'))
-                                                        cur_day_monthly = cur_day_monthly + "Saturday";
-                                                    else
-                                                        cur_day_monthly = cur_day_monthly + "Sunday";
+                                                        if (repeat_rules.charAt(28) == 'M')
+                                                            cur_day_monthly = cur_day_monthly + "Monday";
+                                                        else if ((repeat_rules.charAt(28) == 'T') && (repeat_rules.charAt(29) == 'U'))
+                                                            cur_day_monthly = cur_day_monthly + "Tuesday";
+                                                        else if ((repeat_rules.charAt(28) == 'W'))
+                                                            cur_day_monthly = cur_day_monthly + "Wednesday";
+                                                        else if ((repeat_rules.charAt(28) == 'T') && (repeat_rules.charAt(29) == 'H'))
+                                                            cur_day_monthly = cur_day_monthly + "Thursday";
+                                                        else if (repeat_rules.charAt(28) == 'F')
+                                                            cur_day_monthly = cur_day_monthly + "Friday";
+                                                        else if ((repeat_rules.charAt(28) == 'S') && (repeat_rules.charAt(29) == 'A'))
+                                                            cur_day_monthly = cur_day_monthly + "Saturday";
+                                                        else
+                                                            cur_day_monthly = cur_day_monthly + "Sunday";
+                                                    }
                                                 }
+                                                repeat = "5_2_1_" + Integer.toString(radio) + "_" + start_date.substring(0, 2);
+
                                             }
-                                            repeat="5_2_1_"+radio+"_"+start_date.substring(0,2);
+
                                         }
                                     }
                                     break;
@@ -1926,9 +2243,9 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                                     else if(repeat_rules.charAt(12)=='U')
                                     {
                                         SimpleDateFormat sdf1 = new SimpleDateFormat("dd/MM/yyyy");
-                                        int day=Integer.valueOf(repeat_rules.substring(23,25))+1;
-                                        int month=Integer.valueOf(repeat_rules.substring(21,23))-1;
-                                        int year=Integer.valueOf(repeat_rules.substring(17, 21));
+                                        int day=Integer.valueOf(repeat_rules.substring(24,26));
+                                        int month=Integer.valueOf(repeat_rules.substring(22,24))-1;
+                                        int year=Integer.valueOf(repeat_rules.substring(18, 22));
                                         java.util.Date d = new java.util.Date(year-1900,month, day,0,0);
                                         String s=sdf1.format(d);
                                         repeat_until="1_"+s;
@@ -1970,59 +2287,169 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                 }while(cur2.moveToNext());
 
 
+
+
+
+
+
+                Calendar beginTime = Calendar.getInstance();
+                beginTime.set(1990, 5, 26, 8, 0);
+                long startMillis = beginTime.getTimeInMillis();
+                Calendar endTime = Calendar.getInstance();
+                endTime.set(4000, 1, 6, 8, 0);
+                long endMillis = endTime.getTimeInMillis();
+
+                String selection3 = "((" + CalendarContract.Instances.CALENDAR_DISPLAY_NAME + " = ?) AND (" + CalendarContract.Instances.EVENT_ID + " = ?))";
+                String[] selectionArgs3 = new String[]{calendar_name,id};
+
+// Construct the query with the desired date range.
+                Uri.Builder builder = CalendarContract.Instances.CONTENT_URI.buildUpon();
+                ContentUris.appendId(builder, startMillis);
+                ContentUris.appendId(builder, endMillis);
+
+// Submit the query
+                Cursor cur3 = getContentResolver().query(builder.build(),
+                        INSTANCE_PROJECTION,
+                        selection3,
+                        selectionArgs3,
+                        null);
+                cur3.moveToFirst();
+                if(cur3.getCount()>0) {
+                    do {
+
+                        long epoch_rep_end;
+                        epoch_rep_end = Long.valueOf(cur3.getString(2));
+                        Date date5 = new Date(epoch_rep_end);
+                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+                        first_pending_end_date = sdf.format(date5);
+                        //Toast.makeText(getBaseContext(),rep_end_date,Toast.LENGTH_SHORT).show();
+                        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+                        first_pending_end_time = timeFormat.format(date5);
+
+
+                        Calendar calnow = Calendar.getInstance();
+                        java.util.Date d = new java.util.Date(calnow.get(Calendar.YEAR) - 1900, calnow.get(Calendar.MONTH),
+                                calnow.get(Calendar.DAY_OF_MONTH), calnow.get(Calendar.HOUR_OF_DAY), calnow.get(Calendar.MINUTE));
+                        String today_date = sdf.format(d);
+                        String today_time = timeFormat.format(d);
+
+                        //Toast.makeText(getBaseContext(),today_date,Toast.LENGTH_SHORT).show();
+
+                        if (dateidentifier(first_pending_end_date, today_date) == 2) {
+
+
+                            long epoch_rep_start;
+                            epoch_rep_start = Long.valueOf(cur3.getString(1));
+                            Date date6 = new Date(epoch_rep_start);
+                            first_pending_start_date = sdf.format(date6);
+                            first_pending_start_time = timeFormat.format(date5);
+                            sync_editor.putString("pending_start_date", first_pending_start_date);
+                            sync_editor.commit();
+                            sync_editor.putString("pending_start_time", first_pending_start_time);
+                            sync_editor.commit();
+
+
+                            create_pending_intent = 1;
+
+                            break;
+                        } else if (dateidentifier(first_pending_end_date, today_date) == 3) {
+                            if (time_identifier1(first_pending_end_time, today_time) == 2) {
+                                long epoch_rep_start;
+                                epoch_rep_start = Long.valueOf(cur3.getString(1));
+                                Date date6 = new Date(epoch_rep_start);
+                                first_pending_start_date = sdf.format(date6);
+                                first_pending_start_time = timeFormat.format(date5);
+                                sync_editor.putString("pending_start_date", first_pending_start_date);
+                                sync_editor.commit();
+                                sync_editor.putString("pending_start_time", first_pending_start_time);
+                                sync_editor.commit();
+
+
+                                create_pending_intent = 1;
+
+                                break;
+                            }
+                        }
+
+
+                    } while (cur3.moveToNext());
+                }
+
+
+
+
                 DBAdapter db= new DBAdapter(this);
                 db.open();
 
                 db.insertevent(name, description, start_date, end_date, start_time, end_time, unique_datetime_key,
                         bluetooth_status, wifi_status, profile_status, mobiledata_status, repeat, repeat_until,
-                        cur_day_monthly, interval,start_date);
+                        cur_day_monthly, interval, start_date, 1);
                 db.close();
 
 
-                Calendar start=Calendar.getInstance();
-                int start_day=Integer.valueOf(start_date.substring(0, 2));
-                int start_month=Integer.valueOf(start_date.substring(3,5))-1;
-                int start_year=Integer.valueOf(start_date.substring(6));
-                int start_hour=Integer.valueOf(start_time.substring(0,2));
-                int start_min=Integer.valueOf(start_time.substring(3));
-                start.set(Calendar.DAY_OF_MONTH,start_day);
-                start.set(Calendar.MONTH,start_month);
-                start.set(Calendar.YEAR,start_year);
-                start.set(Calendar.HOUR_OF_DAY,start_hour);
-                start.set(Calendar.MINUTE,start_min);
-                start.set(Calendar.SECOND,0);
-                start.set(Calendar.MILLISECOND,0);
 
-                start_eve(start,repeat,repeat_until,cur_day_monthly);
+                if(create_pending_intent==1)
+                {
+
+                    Calendar start=Calendar.getInstance();
+                    start_day=Integer.valueOf(first_pending_start_date.substring(0, 2));
+                    start_month=Integer.valueOf(first_pending_start_date.substring(3,5))-1;
+                    start_year=Integer.valueOf(first_pending_start_date.substring(6));
+                    int start_hour=Integer.valueOf(first_pending_start_time.substring(0,2));
+                    int start_min=Integer.valueOf(first_pending_start_time.substring(3));
+                    start.set(Calendar.DAY_OF_MONTH,start_day);
+                    start.set(Calendar.MONTH,start_month);
+                    start.set(Calendar.YEAR,start_year);
+                    start.set(Calendar.HOUR_OF_DAY,start_hour);
+                    start.set(Calendar.MINUTE, start_min);
+                    start.set(Calendar.SECOND, 0);
+                    start.set(Calendar.MILLISECOND, 0);
+
+                    start_eve(start,repeat,repeat_until,cur_day_monthly);
 
 
 
 
-                Calendar end=Calendar.getInstance();
-                int end_day=Integer.valueOf(end_date.substring(0, 2));
-                int end_month=Integer.valueOf(end_date.substring(3,5))-1;
-                int end_year=Integer.valueOf(end_date.substring(6));
-                int end_hour=Integer.valueOf(end_time.substring(0,2));
-                int end_min=Integer.valueOf(end_time.substring(3));
-                end.set(Calendar.DAY_OF_MONTH,end_day);
-                end.set(Calendar.MONTH,end_month);
-                end.set(Calendar.YEAR,end_year);
-                end.set(Calendar.HOUR_OF_DAY,end_hour);
-                end.set(Calendar.MINUTE,end_min);
-                end.set(Calendar.MILLISECOND,0);
-                end.set(Calendar.SECOND,0);
+                    Calendar end=Calendar.getInstance();
+                    int end_day=Integer.valueOf(first_pending_end_date.substring(0, 2));
+                    int end_month=Integer.valueOf(first_pending_end_date.substring(3,5))-1;
+                    int end_year=Integer.valueOf(first_pending_end_date.substring(6));
+                    int end_hour=Integer.valueOf(first_pending_end_time.substring(0,2));
+                    int end_min=Integer.valueOf(first_pending_end_time.substring(3));
+                    end.set(Calendar.DAY_OF_MONTH,end_day);
+                    end.set(Calendar.MONTH,end_month);
+                    end.set(Calendar.YEAR,end_year);
+                    end.set(Calendar.HOUR_OF_DAY,end_hour);
+                    end.set(Calendar.MINUTE,end_min);
+                    end.set(Calendar.MILLISECOND,0);
+                    end.set(Calendar.SECOND, 0);
 
-                end_eve(end,repeat,repeat_until,cur_day_monthly);
+                    end_eve(end,repeat,repeat_until,cur_day_monthly);
+
+
+                }
+
+
 
             }
 
         }
         frag.setVisibility(View.INVISIBLE);
+
+
         l.setVisibility(View.VISIBLE);
         go_to_main.setVisibility(View.VISIBLE);
-        event_list_text.setVisibility(View.VISIBLE);
+        set_profile.setVisibility(View.VISIBLE);
         select_all.setVisibility(View.VISIBLE);
-        set_profile.setVisibility(View.INVISIBLE);
+        set_profile.setBackgroundColor(Color.rgb(240, 240, 240));
+        set_profile.setTextColor(Color.rgb(180, 180, 180));
+        set_profile.setClickable(false);
+        //set_profile.setVisibility(View.INVISIBLE);
+
+        for (int i = 0; i < 1000; i++)
+        {
+            ischecked[i] = false;
+        }
         show_events();
 
 
@@ -2065,7 +2492,7 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
         editor = sharedpreferences.edit();
 
 
-        editor.putInt("no_of_times_event_ran"+Integer.toString(id), 0);
+        editor.putInt("no_of_times_event_ran" + Integer.toString(id), 0);
         editor.commit();
 
 
@@ -2073,7 +2500,8 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
 
         intent.putExtra("id",id);
         //if new event is repeated
-        intent.putExtra("rep",rep);
+        intent.putExtra("rep", rep);
+
         intent.putExtra("rep_until",rep_until);
         intent.putExtra("cur_dayofweek_for_cus_monthly_rep",cur_dayofweek_for_cus_monthly_rep);
 
@@ -2111,14 +2539,11 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                     added_in_mon_date_in_pending_function=added_in_mon_date_in_pending_function+7*(Integer.valueOf(rep.substring(4, rep.length() - 8))-1);
                     date.add(Calendar.DAY_OF_MONTH,7*(Integer.valueOf(rep.substring(4, rep.length() - 8))-1));
                 }
-                targetCal.set(Calendar.DAY_OF_MONTH,date.get(Calendar.DAY_OF_MONTH));
-                targetCal.set(Calendar.MONTH,date.get(Calendar.MONTH));
-                targetCal.set(Calendar.YEAR,date.get(Calendar.YEAR));
+                targetCal.set(Calendar.DAY_OF_MONTH, date.get(Calendar.DAY_OF_MONTH));
+                targetCal.set(Calendar.MONTH, date.get(Calendar.MONTH));
+                targetCal.set(Calendar.YEAR, date.get(Calendar.YEAR));
 
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
                 AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
@@ -2141,13 +2566,11 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                     added_in_tue_date_in_pending_function=added_in_tue_date_in_pending_function+7*(Integer.valueOf(rep.substring(4, rep.length() - 8))-1);
                     date.add(Calendar.DAY_OF_MONTH,7*(Integer.valueOf(rep.substring(4, rep.length() - 8))-1));
                 }
-                targetCal.set(Calendar.DAY_OF_MONTH,date.get(Calendar.DAY_OF_MONTH));
-                targetCal.set(Calendar.MONTH,date.get(Calendar.MONTH));
-                targetCal.set(Calendar.YEAR,date.get(Calendar.YEAR));
+                targetCal.set(Calendar.DAY_OF_MONTH, date.get(Calendar.DAY_OF_MONTH));
+                targetCal.set(Calendar.MONTH, date.get(Calendar.MONTH));
+                targetCal.set(Calendar.YEAR, date.get(Calendar.YEAR));
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
+
 
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
@@ -2173,13 +2596,11 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                     date.add(Calendar.DAY_OF_MONTH,7*(Integer.valueOf(rep.substring(4, rep.length() - 8))-1));
                 }
 
-                targetCal.set(Calendar.DAY_OF_MONTH,date.get(Calendar.DAY_OF_MONTH));
-                targetCal.set(Calendar.MONTH,date.get(Calendar.MONTH));
-                targetCal.set(Calendar.YEAR,date.get(Calendar.YEAR));
+                targetCal.set(Calendar.DAY_OF_MONTH, date.get(Calendar.DAY_OF_MONTH));
+                targetCal.set(Calendar.MONTH, date.get(Calendar.MONTH));
+                targetCal.set(Calendar.YEAR, date.get(Calendar.YEAR));
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
+
 
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
@@ -2204,13 +2625,10 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                     date.add(Calendar.DAY_OF_MONTH,7*(Integer.valueOf(rep.substring(4, rep.length() - 8))-1));
 
                 }
-                targetCal.set(Calendar.DAY_OF_MONTH,date.get(Calendar.DAY_OF_MONTH));
-                targetCal.set(Calendar.MONTH,date.get(Calendar.MONTH));
-                targetCal.set(Calendar.YEAR,date.get(Calendar.YEAR));
+                targetCal.set(Calendar.DAY_OF_MONTH, date.get(Calendar.DAY_OF_MONTH));
+                targetCal.set(Calendar.MONTH, date.get(Calendar.MONTH));
+                targetCal.set(Calendar.YEAR, date.get(Calendar.YEAR));
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
 
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
@@ -2233,13 +2651,11 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                     added_in_fri_date_in_pending_function=added_in_fri_date_in_pending_function+7*(Integer.valueOf(rep.substring(4, rep.length() - 8))-1);
                 }
 
-                targetCal.set(Calendar.DAY_OF_MONTH,date.get(Calendar.DAY_OF_MONTH));
-                targetCal.set(Calendar.MONTH,date.get(Calendar.MONTH));
-                targetCal.set(Calendar.YEAR,date.get(Calendar.YEAR));
+                targetCal.set(Calendar.DAY_OF_MONTH, date.get(Calendar.DAY_OF_MONTH));
+                targetCal.set(Calendar.MONTH, date.get(Calendar.MONTH));
+                targetCal.set(Calendar.YEAR, date.get(Calendar.YEAR));
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
+
 
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
@@ -2257,13 +2673,11 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                     date.add(Calendar.DATE, 1);//get the date of the latest saturday from date entered
                 }
 
-                targetCal.set(Calendar.DAY_OF_MONTH,date.get(Calendar.DAY_OF_MONTH));
-                targetCal.set(Calendar.MONTH,date.get(Calendar.MONTH));
-                targetCal.set(Calendar.YEAR,date.get(Calendar.YEAR));
+                targetCal.set(Calendar.DAY_OF_MONTH, date.get(Calendar.DAY_OF_MONTH));
+                targetCal.set(Calendar.MONTH, date.get(Calendar.MONTH));
+                targetCal.set(Calendar.YEAR, date.get(Calendar.YEAR));
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
+
 
 
 
@@ -2287,13 +2701,11 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
                     date.add(Calendar.DAY_OF_MONTH,7*(Integer.valueOf(rep.substring(4, rep.length() - 8))-1));
                     added_in_sun_date_in_pending_function=added_in_sun_date_in_pending_function+7*(Integer.valueOf(rep.substring(4, rep.length() - 8))-1);
                 }
-                targetCal.set(Calendar.DAY_OF_MONTH,date.get(Calendar.DAY_OF_MONTH));
-                targetCal.set(Calendar.MONTH,date.get(Calendar.MONTH));
-                targetCal.set(Calendar.YEAR,date.get(Calendar.YEAR));
+                targetCal.set(Calendar.DAY_OF_MONTH, date.get(Calendar.DAY_OF_MONTH));
+                targetCal.set(Calendar.MONTH, date.get(Calendar.MONTH));
+                targetCal.set(Calendar.YEAR, date.get(Calendar.YEAR));
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
+
 
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
@@ -2309,6 +2721,8 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
             PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
             AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
             alarmManager.set(AlarmManager.RTC_WAKEUP, targetCal.getTimeInMillis(), pendingIntent);
+
+
         }
     }
 
@@ -2345,11 +2759,7 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
 
                 targetCal.add(Calendar.DAY_OF_MONTH, added_in_mon_date_in_pending_function);
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.HOUR_OF_DAY)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MINUTE)),Toast.LENGTH_SHORT).show();
+
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(),id , intent, 0);
                 AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
@@ -2363,15 +2773,9 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
             {
 
 
-                targetCal.add(Calendar.DAY_OF_MONTH,added_in_tue_date_in_pending_function);
+                targetCal.add(Calendar.DAY_OF_MONTH, added_in_tue_date_in_pending_function);
 
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.HOUR_OF_DAY)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MINUTE)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.SECOND)),Toast.LENGTH_SHORT).show();
 
 
 
@@ -2387,14 +2791,9 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
             if (rep.charAt(rep.length()-5)=='1')
             {
 
-                targetCal.add(Calendar.DAY_OF_MONTH,added_in_wed_date_in_pending_function);
+                targetCal.add(Calendar.DAY_OF_MONTH, added_in_wed_date_in_pending_function);
 
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.HOUR_OF_DAY)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MINUTE)),Toast.LENGTH_SHORT).show();
 
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
@@ -2411,15 +2810,10 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
 
 
 
-                targetCal.add(Calendar.DAY_OF_MONTH,added_in_thu_date_in_pending_function);
+                targetCal.add(Calendar.DAY_OF_MONTH, added_in_thu_date_in_pending_function);
 
 
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.HOUR_OF_DAY)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MINUTE)),Toast.LENGTH_SHORT).show();
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
                 AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
@@ -2435,14 +2829,9 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
 
 
 
-                targetCal.add(Calendar.DAY_OF_MONTH,added_in_fri_date_in_pending_function);
+                targetCal.add(Calendar.DAY_OF_MONTH, added_in_fri_date_in_pending_function);
 
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.HOUR_OF_DAY)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MINUTE)),Toast.LENGTH_SHORT).show();
 
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
@@ -2458,14 +2847,9 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
             if (rep.charAt(rep.length()-2)=='1')
             {
 
-                targetCal.add(Calendar.DAY_OF_MONTH,added_in_sat_date_in_pending_function);
+                targetCal.add(Calendar.DAY_OF_MONTH, added_in_sat_date_in_pending_function);
 
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.HOUR_OF_DAY)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MINUTE)),Toast.LENGTH_SHORT).show();
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
                 AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
@@ -2480,14 +2864,9 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
             if (rep.charAt(rep.length()-1)=='1') {
 
 
-                targetCal.add(Calendar.DAY_OF_MONTH,added_in_sun_date_in_pending_function);
+                targetCal.add(Calendar.DAY_OF_MONTH, added_in_sun_date_in_pending_function);
 
 
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.DAY_OF_MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MONTH)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.YEAR)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.HOUR_OF_DAY)),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getBaseContext(),Integer.toString(targetCal.get(Calendar.MINUTE)),Toast.LENGTH_SHORT).show();
 
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(getBaseContext(), id, intent, 0);
                 AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
@@ -2507,4 +2886,205 @@ public class sync_event_list extends ActionBarActivity implements profile_fragme
     }
 
 
+
+    //returns 3 if equal
+    //returns 1 if date1<date2
+    //returns2 if date1>date2
+    public int dateidentifier(String date1,String date2) {
+
+        int asci1 = 0, asci2 = 0, as;
+        int i;
+        for (i = 6; i <= 9; i++)
+        {
+
+            char ch = date1.charAt(i);
+
+            as = (int) ch;
+            as = as - 48;
+            int j;
+            j = (int) Math.pow(10, 14 - i);
+            as = as * j;
+            asci1 = asci1 + as;
+
+        }
+
+
+        char ch = date1.charAt(3);
+
+        as = (int) ch;
+        as = as - 48;
+        int j;
+        j = (int) Math.pow(10, 3);
+        as = as * j;
+        asci1 = asci1 + as;
+
+        ch = date1.charAt(4);
+
+        as = (int) ch;
+        as = as - 48;
+
+        j = (int) Math.pow(10, 2);
+        as = as * j;
+        asci1 = asci1 + as;
+
+        ch = date1.charAt(0);
+
+        as = (int) ch;
+        as = as - 48;
+
+        j = (int) Math.pow(10, 1);
+        as = as * j;
+        asci1 = asci1 + as;
+
+        ch = date1.charAt(1);
+
+        as = (int) ch;
+        as = as - 48;
+
+        j = (int) Math.pow(10, 0);
+        as = as * j;
+        asci1 = asci1 + as;
+
+        for (i = 6; i <= 9; i++)
+        {
+
+            ch = date2.charAt(i);
+
+            as = (int) ch;
+            as = as - 48;
+
+            j = (int) Math.pow(10, 14 - i);
+            as = as * j;
+            asci2 = asci2 + as;
+
+        }
+
+
+        ch = date2.charAt(3);
+
+        as = (int) ch;
+        as = as - 48;
+
+        j = (int) Math.pow(10, 3);
+        as = as * j;
+        asci2 = asci2 + as;
+
+        ch = date2.charAt(4);
+
+        as = (int) ch;
+        as = as - 48;
+
+        j = (int) Math.pow(10, 2);
+        as = as * j;
+        asci2 = asci2+ as;
+
+        ch = date2.charAt(0);
+
+        as = (int) ch;
+        as = as - 48;
+
+        j = (int) Math.pow(10, 1);
+        as = as * j;
+        asci2 = asci2 + as;
+
+        ch = date2.charAt(1);
+
+        as = (int) ch;
+        as = as - 48;
+
+        j = (int) Math.pow(10, 0);
+        as = as * j;
+        asci2 = asci2 + as;
+
+        if(asci1==asci2)
+            return 3;
+        else if(asci1<asci2)
+            return 1;
+        else
+            return 2;
+
+    }
+
+
+    //returns 1 if time1<time2
+    //returns 2 if time1>time2
+    //returns 3 if equal
+    public int time_identifier1(String time1,String time2) {
+
+        int asci1 = 0, asci2 = 0, as;
+        int i;
+        for (i = 0; i <= 4; i++)
+        {
+            //ch gets the char at position i in string time1
+            char ch = time1.charAt(i);
+            if(ch!=':')
+            {
+                as = (int) ch;
+                as = as - 48;
+                int j;
+                j = (int) Math.pow(10, 4 - i);
+                as = as * j;
+                asci1 = asci1 + as;
+            }
+        }
+        for (i = 0; i <= 4; i++)
+        {
+
+            char ch = time2.charAt(i);
+            if(ch!=':')
+            {
+                as = (int) ch;
+                as = as - 48;
+                int j;
+                j = (int) Math.pow(10, 4 - i);
+                as = as * j;
+                asci2 = asci2 + as;
+            }
+        }
+        //asci1 contains the polynomial hashing value of time1 string
+        //asci2 contains the polynomial hashing value of time2 string
+        if(asci1==asci2)
+            return 3;
+        else if(asci1<asci2)
+            return 1;
+        else
+            return 2;
+
+
+
+    }
+
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+
+        getMenuInflater().inflate(R.menu.menu_show_events_list, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.refresh) {
+            Intent i=new Intent(this,sync_event_list.class);
+            startActivity(i);
+            //mViewPager.setCurrentItem(tab.getPosition());
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+
+    @Override
+    public void onBackPressed() {
+        Intent ine=new Intent(sync_event_list.this,sync.class);
+        startActivity(ine);
+    }
 }

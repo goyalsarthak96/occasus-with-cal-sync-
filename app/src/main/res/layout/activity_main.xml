@@ -51,7 +51,7 @@
         android:layout_height="wrap_content"
         android:text="Sync"
         android:id="@+id/sync"
-        android:layout_below="@+id/urgent_sms"
+        android:layout_below="@+id/show_events"
         android:layout_centerHorizontal="true"
         android:onClick="sync" />
 
@@ -62,7 +62,7 @@
         android:layout_height="wrap_content"
         android:text="Quick Silent"
         android:id="@+id/quick_silent"
-        android:layout_below="@+id/sync"
+        android:layout_below="@+id/urgent_sms"
         android:layout_centerHorizontal="true"
         android:onClick="quick_silent" />
 
